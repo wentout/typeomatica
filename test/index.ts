@@ -10,10 +10,9 @@ import { BaseClass }  from '..';
 class Base extends BasePrototype({
 	additionalProp: 321
 }) {
-	someValue = 123;
+	numberValue = 123;
 	constructor() {
 		super();
-		this.numberValue = 123;
 		this.stringValue = '123';
 		this.booleanValue = true;
 		this.objectValue = {};
