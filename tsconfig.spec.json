@@ -1,0 +1,30 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"target": "ES2015",
+		"lib": [
+			"ES6",
+		],
+		"strict": true,
+		"alwaysStrict": true,
+		"strictFunctionTypes": true,
+		"diagnostics": true,
+		"noImplicitThis": true,
+		"extendedDiagnostics": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"declaration": true,
+		"sourceMap": false,
+		"outDir": "lib",
+		"traceResolution": false,
+		"removeComments": true,
+		"experimentalDecorators": true,
+		"forceConsistentCasingInFileNames": true,
+        "types": [
+            "jest",
+            "node"
+        ]
+    },
+}
