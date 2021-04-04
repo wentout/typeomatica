@@ -1,7 +1,7 @@
 {
 	"name": "typeomatica",
-	"version": "0.0.5",
-	"description": "type logic agains javascript metaprogramming",
+	"version": "0.0.7",
+	"description": "type logic against javascript metaprogramming",
 	"main": "lib/index.js",
 	"scripts": {
 		"build": "rm -rf ./lib && npx tsc --pretty",
