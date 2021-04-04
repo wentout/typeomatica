@@ -1,6 +1,6 @@
 {
 	"name": "typeomatica",
-	"version": "0.0.1",
+	"version": "0.0.3",
 	"description": "type logic agains javascript metaprogramming",
 	"main": "lib/index.js",
 	"scripts": {
@@ -20,6 +20,10 @@
 	],
 	"author": "went.out@gmail.com",
 	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/wentout/typeomatica.git"
+	  },
 	"devDependencies": {
 		"@types/jest": "^26.0.22",
 		"@types/node": "^14.14.37",
