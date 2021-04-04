@@ -1,5 +1,7 @@
 # typomatica
 
+[![Coverage Status](https://coveralls.io/repos/github/wentout/typeomatica/badge.svg?branch=main)](https://coveralls.io/github/wentout/typeomatica?branch=main)
+
 this package is a part of [mnemonica](https://www.npmjs.com/package/mnemonica) project
 
 simple strong type restriction for mnemonica based types
