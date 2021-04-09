@@ -208,11 +208,11 @@ const BaseTarget = Object.create(null);
 
 const BasePrototype = new Proxy(BaseTarget, handlers);
 
-// export type IDEF = {
-// 	new(...args: any[]): object;
-// 	(this: object, ...args: any[]): object;
-// 	prototype: object;
-// }
+export type IDEF<T, P = {}, R = {}> = {
+	new(...args: any[]): T;
+	(this: T, ...args: any[]): R;
+	prototype: P;
+};
 
 // @ts-ignore
 const BaseConstructor = function (this: object, InstanceTarget = BaseTarget) {
