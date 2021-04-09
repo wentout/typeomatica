@@ -4,6 +4,7 @@ const ErrorsNames = {
 	TYPE_MISMATCH: 'Type Mismatch',
 	ACCESS_DENIED: 'Value Access Denied',
 	MISSING_PROP: 'Attempt to Access to Undefined Prop',
+	RIP_FUNCTIONS: 'Functions are Restricted'
 };
 
 const PRIMITIVE_TYPES = [
@@ -15,7 +16,6 @@ const PRIMITIVE_TYPES = [
 const isPrimitive = (value: unknown) => {
 	return PRIMITIVE_TYPES.includes(typeof value);
 };
-
 
 const primitives = (initialValue: object) => {
 	let value = Object(initialValue);
@@ -116,26 +116,57 @@ const objects = (value: object) => {
 	}
 };
 
-const resolver = {
+const functions = () => {
+	throw new TypeError(ErrorsNames.RIP_FUNCTIONS);
+};
+
+const resolver = Object.entries({
 	primitives,
 	special,
 	nullish,
 	objects,
-};
+	functions
+}).reduce((obj: object, [key, _handler]) => {
+	// @ts-ignore
+	obj[key] = function (initialValue: object, receiver: object) {
+		const handler = _handler(initialValue);
+		return {
+			get() {
+				const invocationThis = this;
+				if (invocationThis !== receiver) {
+					throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
+				}
+				return handler.get();
+			},
+			set(replacementValue: unknown) {
+				const invocationThis = this;
+				if (invocationThis !== receiver) {
+					throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
+				}
+				return handler.set(replacementValue);
+			}
+		}
+	};
+
+	return obj;
+}, {});
 
 const createProperty = (propName: string, initialValue: any, receiver: object) => {
 
 	const value = initialValue;
 	const valueIsPrimitive = isPrimitive(initialValue);
 	const isObject = typeof initialValue === 'object';
+	const isFunction = initialValue instanceof Function;
 	const isNull = initialValue === null;
 
 	const type = valueIsPrimitive ? 'primitives' : (
 		isObject ? (
 			isNull ? 'nullish' : 'objects'
-		) : 'special');
+		) : (
+			isFunction ? 'functions' : 'special'));
 
-	const descriptor = resolver[type](value);
+	// @ts-ignore
+	const descriptor = resolver[type](value, receiver);
 
 	const result = Reflect.defineProperty(receiver, propName, {
 		...descriptor,
@@ -165,14 +196,14 @@ const BaseTarget = Object.create(null);
 
 const BasePrototype = new Proxy(BaseTarget, handlers);
 
-export type IDEF = {
-	new( ...args: any[] ): object;
-	( this: object, ...args: any[] ): object;
-	prototype: object;
-}
+// export type IDEF = {
+// 	new(...args: any[]): object;
+// 	(this: object, ...args: any[]): object;
+// 	prototype: object;
+// }
 
 // @ts-ignore
-const BaseConstructor = function (this: object, InstanceTarget = BaseTarget): object {
+const BaseConstructor = function (this: object, InstanceTarget = BaseTarget) {
 	if (!new.target) {
 		return function () {
 			// @ts-ignore
@@ -181,7 +212,8 @@ const BaseConstructor = function (this: object, InstanceTarget = BaseTarget): ob
 	}
 	const InstancePrototype = new Proxy(InstanceTarget, handlers);
 	Reflect.setPrototypeOf(this, InstancePrototype);
-} as IDEF;
+} as ObjectConstructor;
+// } as IDEF;
 
 Reflect.setPrototypeOf(BaseConstructor.prototype, BasePrototype);
 
