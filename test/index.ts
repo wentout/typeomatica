@@ -5,10 +5,13 @@
 // or meaningless
 
 const BasePrototype = require('..');
-import { BaseClass }  from '..';
+import { BaseClass } from '..';
 
 class Base extends BasePrototype({
-	additionalProp: 321
+	additionalProp: 321,
+	someMethod() {
+		return this.numberValue.valueOf();
+	}
 }) {
 	numberValue = 123;
 	constructor() {
@@ -21,6 +24,7 @@ class Base extends BasePrototype({
 
 const baseInstance = new Base;
 
+const upperInstance = Object.create(baseInstance);
 
 class SimpleBase extends BaseClass {
 	stringProp = '123';
@@ -190,6 +194,64 @@ describe('props tests', () => {
 			baseInstance.missingValue > 1;
 
 		}).toThrow(new TypeError('Attempt to Access to Undefined Prop'));
+	});
+
+});
+
+describe('mutations tests', () => {
+
+	test('incorrect prototype invocation number get', () => {
+		expect(() => {
+
+			upperInstance.numberValue > 1;
+
+		}).toThrow(new ReferenceError('Value Access Denied'));
+	});
+
+	test('incorrect prototype invocation number set', () => {
+		expect(() => {
+
+			upperInstance.numberValue = new Number(1);
+
+		}).toThrow(new ReferenceError('Value Access Denied'));
+	});
+
+
+	test('incorrect prototype invocation string get', () => {
+		expect(() => {
+
+			upperInstance.stringValue > '1';
+
+		}).toThrow(new ReferenceError('Value Access Denied'));
+	});
+
+	test('incorrect prototype invocation string set', () => {
+		expect(() => {
+
+			upperInstance.stringValue = new String(1);
+
+		}).toThrow(new ReferenceError('Value Access Denied'));
+	});
+
+});
+
+describe('methods tests', () => {
+
+	test('functions are restricted for data type', () => {
+
+		expect(() => {
+
+			baseInstance.someMethod = function () { };
+
+		}).toThrow(new TypeError('Functions are Restricted'));
+
+	});
+
+	test('proxy proto methods are SOLID', () => {
+
+		const result = baseInstance.someMethod();
+		expect(result).toBe(123);
+
 	});
 
 });
