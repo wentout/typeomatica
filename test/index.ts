@@ -5,7 +5,7 @@
 // or meaningless
 
 const BasePrototype = require('..');
-import { BaseClass } from '..';
+import { BaseClass, IDEF } from '..';
 
 class Base extends BasePrototype({
 	additionalProp: 321,
@@ -31,6 +31,20 @@ class SimpleBase extends BaseClass {
 };
 
 const simpleInstance = new SimpleBase;
+
+type MyFunctionalConstructorInstance = {
+	stringProp: string
+};
+
+const MyFunctionalConstructor = function () {
+	this.stringProp = '123';
+} as IDEF<MyFunctionalConstructorInstance>;
+
+MyFunctionalConstructor.prototype = new BasePrototype({
+	constructor: MyFunctionalConstructor
+});
+
+const myFunctionalInstance = new MyFunctionalConstructor();
 
 const MUTATION_VALUE = -2;
 
@@ -265,4 +279,37 @@ describe('methods tests', () => {
 
 	});
 
+});
+
+describe('property re-definition works', () => {
+
+	test('exact prototype invocation for correct property extraction', () => {
+
+		Object.defineProperty(upperInstance, 'stringProp', {
+			get() {
+				const target = Reflect.getPrototypeOf(upperInstance) as {
+					stringValue: string
+				};
+				return target.stringValue;
+			}
+		});
+
+		const value = upperInstance.stringProp;
+		expect(`${value}`).toEqual('123');
+
+	});
+});
+
+describe('functional constructors tests', () => {
+	test('construction made properly', () => {
+
+		const { stringProp,
+			constructor: {
+				name
+			}
+		} = myFunctionalInstance;
+		expect(name).toEqual('MyFunctionalConstructor');
+		expect(stringProp.valueOf()).toEqual('123');
+
+	});
 });
