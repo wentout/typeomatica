@@ -86,8 +86,19 @@ describe('props tests', () => {
 
 	test('correct boolean assignment', () => {
 
+		let { booleanValue } = baseInstance;
+		expect(booleanValue.valueOf()).toEqual(true);
+
+		// warning!
+		// booleanValue does not rely on baseInstance anymore!
+		booleanValue = new Boolean(false);
+		
+		let value = baseInstance.booleanValue.valueOf();
+		expect(value).toEqual(true);
+		
+		
 		baseInstance.booleanValue = new Boolean(false);
-		const value = baseInstance.booleanValue.valueOf();
+		value = baseInstance.booleanValue.valueOf();
 		expect(value).toEqual(false);
 
 	});
