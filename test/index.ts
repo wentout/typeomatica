@@ -32,6 +32,8 @@ class SimpleBase extends BaseClass {
 
 const simpleInstance = new SimpleBase;
 
+const MUTATION_VALUE = -2;
+
 describe('props tests', () => {
 
 	test('simple instance works & strings too', () => {
@@ -106,13 +108,22 @@ describe('props tests', () => {
 
 	test('correct number arithmetics using .valueOf()', () => {
 
+		baseInstance.numberValue = MUTATION_VALUE;
+
 		const result = baseInstance.numberValue.valueOf() + 5;
-		expect(result).toEqual(128);
+		expect(result).toStrictEqual(3);
+
+	});
+
+	test('correct number arithmetics using hinting for Symbol.toPrimitive (hint)', () => {
+
+		const result = 3 + +baseInstance.numberValue;
+		expect(result).toStrictEqual(1);
 
 	});
 
 	test('correct number value', () => {
-		expect(baseInstance.numberValue.toString()).toBe('123');
+		expect(baseInstance.numberValue.toString()).toStrictEqual(MUTATION_VALUE.toString());
 		expect(/Number$/.test(baseInstance.numberValue.constructor.name)).toBe(true);
 	});
 
@@ -198,7 +209,7 @@ describe('props tests', () => {
 
 });
 
-describe('mutations tests', () => {
+describe('prototype mutations tests', () => {
 
 	test('incorrect prototype invocation number get', () => {
 		expect(() => {
@@ -250,7 +261,7 @@ describe('methods tests', () => {
 	test('proxy proto methods are SOLID', () => {
 
 		const result = baseInstance.someMethod();
-		expect(result).toBe(123);
+		expect(result).toBe(MUTATION_VALUE);
 
 	});
 

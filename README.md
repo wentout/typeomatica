@@ -6,12 +6,12 @@
 ![GitHub package.json version](https://img.shields.io/github/package-json/v/wentout/typeomatica)
 ![GitHub last commit](https://img.shields.io/github/last-commit/wentout/typeomatica)
 
-[![NPM](https://nodei.co/npm/typeomatica.png?mini=true)](https://www.npmjs.com/package/typeomatica)
+[**$ npm install <u>typeomatica</u>**](https://www.npmjs.com/package/typeomatica)
 
 
-this package is a part of [mnemonica](https://www.npmjs.com/package/mnemonica) project
+This package is a part of [mnemonica](https://www.npmjs.com/package/mnemonica) project.
 
-simple strong type restriction for mnemonica based types
+Strict Types checker for objects which represent Data Types.
 
 # how it works
 
@@ -23,11 +23,22 @@ class SimpleBase extends BasePrototype {
 	stringProp = '123';
 };
 
-// next code line will throw TypeError('Type Mismatch')
+// nect code line will work properly
+simpleInstance.stringProp = '321';
+
+// but next code line will throw TypeError('Type Mismatch')
 // @ts-ignore
 simpleInstance.stringProp = 123;
 
-
 ```
 
-That is it, it will be impossible to assign anything else except of string to `stringProp` in runtime.
+That is it. It will be impossible to assign anything else except of:
+
+```js 
+typeof something === 'string'
+```
+
+to `stringProp` in runtime.
+
+As we describe Data Types &mdash; please take a peek for tests directory:
+[HERE](https://github.com/wentout/typeomatica/blob/main/test/index.ts).
