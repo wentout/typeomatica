@@ -11,7 +11,7 @@ class Base extends BasePrototype({
 	additionalProp: 321,
 	someMethod() {
 		return this.numberValue.valueOf();
-	}
+	},
 }) {
 	numberValue = 123;
 	constructor() {
@@ -40,11 +40,16 @@ const MyFunctionalConstructor = function () {
 	this.stringProp = '123';
 } as IDEF<MyFunctionalConstructorInstance>;
 
-MyFunctionalConstructor.prototype = new BasePrototype({
-	constructor: MyFunctionalConstructor
-});
+Reflect.setPrototypeOf(MyFunctionalConstructor.prototype, new BasePrototype);
 
 const myFunctionalInstance = new MyFunctionalConstructor();
+
+class TripleExtend extends Base { };
+const tiripleExtendInstance = new TripleExtend;
+
+class NetworkedExtention extends BasePrototype(tiripleExtendInstance) { };
+
+const networkedInstance = new NetworkedExtention;
 
 const MUTATION_VALUE = -2;
 
@@ -300,6 +305,7 @@ describe('property re-definition works', () => {
 	});
 });
 
+
 describe('functional constructors tests', () => {
 	test('construction made properly', () => {
 
@@ -310,6 +316,46 @@ describe('functional constructors tests', () => {
 		} = myFunctionalInstance;
 		expect(name).toEqual('MyFunctionalConstructor');
 		expect(stringProp.valueOf()).toEqual('123');
+
+	});
+});
+
+describe('instanceof works', () => {
+	test('for class construction', () => {
+
+		expect(baseInstance).toBeInstanceOf(Base);
+
+	});
+	test('for simple construction', () => {
+
+		expect(simpleInstance).toBeInstanceOf(SimpleBase);
+
+	});
+	test('for functional construction', () => {
+
+		expect(myFunctionalInstance).toBeInstanceOf(MyFunctionalConstructor);
+
+	});
+});
+
+describe('deep extend works', () => {
+	test('class extended three times construction', () => {
+
+		expect(tiripleExtendInstance).toBeInstanceOf(Base);
+		expect(tiripleExtendInstance).toBeInstanceOf(TripleExtend);
+		expect(tiripleExtendInstance).toBeInstanceOf(TripleExtend);
+		expect(`${tiripleExtendInstance.stringValue}`).toEqual('123');
+
+	});
+
+	test('network extention works', () => {
+		expect(networkedInstance).toBeInstanceOf(NetworkedExtention);
+
+		expect(() => {
+
+			`${networkedInstance.stringValue}`;
+
+		}).toThrow(new ReferenceError('Value Access Denied'));
 
 	});
 });

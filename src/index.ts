@@ -190,7 +190,7 @@ const createProperty = (propName: string, initialValue: any, receiver: object) =
 
 
 const handlers = {
-	get(target: object, prop: string, receiver: object) {
+	get(target: object, prop: string | symbol, receiver: object) {
 		const result = Reflect.get(target, prop, receiver);
 		if (result !== undefined) {
 			return result;
@@ -217,13 +217,23 @@ export type IDEF<T, P = {}, R = {}> = {
 // @ts-ignore
 const BaseConstructor = function (this: object, InstanceTarget = BaseTarget) {
 	if (!new.target) {
-		return function () {
-			// @ts-ignore
-			return new BaseConstructor(InstanceTarget);
+		const constructor = BaseConstructor.bind(this, InstanceTarget);
+		constructor.prototype = {
+			constructor: BaseConstructor
 		};
+		return constructor;
 	}
+
 	const InstancePrototype = new Proxy(InstanceTarget, handlers);
-	Reflect.setPrototypeOf(this, InstancePrototype);
+
+	let protoPointer = this;
+	let protoConstrcutor;
+	do {
+		protoPointer = Reflect.getPrototypeOf(protoPointer) as object;
+		protoConstrcutor = Reflect.getOwnPropertyDescriptor(protoPointer, 'constructor')!.value;
+	} while (protoConstrcutor !== BaseConstructor);
+	Reflect.setPrototypeOf(protoPointer, InstancePrototype);
+
 } as ObjectConstructor;
 // } as IDEF;
 
