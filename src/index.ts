@@ -19,6 +19,7 @@ const isPrimitive = (value: unknown) => {
 
 const primitives = (initialValue: object) => {
 	let value = Object(initialValue);
+	const initialType = typeof initialValue;
 
 	return {
 		get() {
@@ -27,8 +28,11 @@ const primitives = (initialValue: object) => {
 				get(_, prop) {
 
 					if (prop === Symbol.toPrimitive) {
-						return function () {
-							throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
+						return function (hint: string) {
+							if (hint !== initialType) {
+								throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
+							}
+							return value.valueOf();
 						}
 					}
 
@@ -62,9 +66,17 @@ const primitives = (initialValue: object) => {
 		// },
 		set(replacementValue: unknown) {
 			if (replacementValue instanceof value.constructor) {
-				value = Object(replacementValue);
+				value = replacementValue;
 				return value;
 			}
+
+			const prevalue = Object(replacementValue);
+
+			if (prevalue instanceof value.constructor) {
+				value = prevalue;
+				return value;
+			}
+
 			const error = new TypeError(ErrorsNames.TYPE_MISMATCH);
 			throw error;
 		}
