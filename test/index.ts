@@ -61,6 +61,10 @@ const MUTATION_VALUE = -2;
 
 describe('props tests', () => {
 
+	test('base instance has props', () => {
+		expect(Object.keys(baseInstance)).toEqual(["numberValue", "stringValue", "booleanValue", "objectValue"]);
+	});
+
 	test('simple instance works & strings too', () => {
 		expect(simpleInstance.stringProp.toString()).toBe('123');
 		expect(simpleInstance.stringProp.length).toBe(3);
@@ -240,7 +244,7 @@ describe('props tests', () => {
 
 			baseInstance.missingValue > 1;
 
-		}).toThrow(new TypeError('Attempt to Access to Undefined Prop'));
+		}).toThrow(new TypeError('Attempt to Access to Undefined Prop: [ missingValue ]'));
 	});
 
 });
