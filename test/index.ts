@@ -51,6 +51,12 @@ class NetworkedExtention extends BasePrototype(tiripleExtendInstance) { };
 
 const networkedInstance = new NetworkedExtention;
 
+class ExtendedArray extends BasePrototype([1, 2, 3]) { };
+class ExtendedSet extends BasePrototype(new Set([1, 2, 3])) { };
+
+const extendedArrayInstance = new ExtendedArray;
+const extendedSetInstance = new ExtendedSet;
+
 const MUTATION_VALUE = -2;
 
 describe('props tests', () => {
@@ -92,11 +98,11 @@ describe('props tests', () => {
 		// warning!
 		// booleanValue does not rely on baseInstance anymore!
 		booleanValue = new Boolean(false);
-		
+
 		let value = baseInstance.booleanValue.valueOf();
 		expect(value).toEqual(true);
-		
-		
+
+
 		baseInstance.booleanValue = new Boolean(false);
 		value = baseInstance.booleanValue.valueOf();
 		expect(value).toEqual(false);
@@ -367,6 +373,28 @@ describe('deep extend works', () => {
 			`${networkedInstance.stringValue}`;
 
 		}).toThrow(new ReferenceError('Value Access Denied'));
+
+	});
+
+	test('builtin types works', () => {
+		expect(extendedArrayInstance).toBeInstanceOf(Array);
+		expect(extendedArrayInstance).toBeInstanceOf(ExtendedArray);
+		expect(extendedArrayInstance[0]).toBe(1);
+		extendedArrayInstance.unshift(0);
+		extendedArrayInstance.push(5);
+		expect(+extendedArrayInstance.length).toBe(5);
+		expect(+extendedArrayInstance[0]).toBe(0);
+		expect(+extendedArrayInstance[4]).toBe(5);
+
+		expect(extendedSetInstance).toBeInstanceOf(Set);
+		expect(extendedSetInstance).toBeInstanceOf(ExtendedSet);
+
+		// JS Object.create(new Set([1, 2, 3])) is doing the same error!
+		expect(() => {
+
+			extendedSetInstance.has(0);
+
+		}).toThrow(new TypeError('Method Set.prototype.has called on incompatible receiver [object Object]'));
 
 	});
 });
