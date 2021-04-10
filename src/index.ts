@@ -195,7 +195,7 @@ const handlers = {
 		if (result !== undefined) {
 			return result;
 		}
-		throw new Error(ErrorsNames.MISSING_PROP);
+		throw new Error(`${ErrorsNames.MISSING_PROP}: [ ${String(prop).valueOf()} ]`);
 	},
 	set(_: object, prop: string, value: unknown, receiver: object) {
 		const result = createProperty(prop, value, receiver);

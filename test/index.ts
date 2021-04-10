@@ -51,9 +51,19 @@ class NetworkedExtention extends BasePrototype(tiripleExtendInstance) { };
 
 const networkedInstance = new NetworkedExtention;
 
+class ExtendedArray extends BasePrototype([1, 2, 3]) { };
+class ExtendedSet extends BasePrototype(new Set([1, 2, 3])) { };
+
+const extendedArrayInstance = new ExtendedArray;
+const extendedSetInstance = new ExtendedSet;
+
 const MUTATION_VALUE = -2;
 
 describe('props tests', () => {
+
+	test('base instance has props', () => {
+		expect(Object.keys(baseInstance)).toEqual(["numberValue", "stringValue", "booleanValue", "objectValue"]);
+	});
 
 	test('simple instance works & strings too', () => {
 		expect(simpleInstance.stringProp.toString()).toBe('123');
@@ -86,8 +96,19 @@ describe('props tests', () => {
 
 	test('correct boolean assignment', () => {
 
+		let { booleanValue } = baseInstance;
+		expect(booleanValue.valueOf()).toEqual(true);
+
+		// warning!
+		// booleanValue does not rely on baseInstance anymore!
+		booleanValue = new Boolean(false);
+
+		let value = baseInstance.booleanValue.valueOf();
+		expect(value).toEqual(true);
+
+
 		baseInstance.booleanValue = new Boolean(false);
-		const value = baseInstance.booleanValue.valueOf();
+		value = baseInstance.booleanValue.valueOf();
 		expect(value).toEqual(false);
 
 	});
@@ -223,7 +244,7 @@ describe('props tests', () => {
 
 			baseInstance.missingValue > 1;
 
-		}).toThrow(new TypeError('Attempt to Access to Undefined Prop'));
+		}).toThrow(new TypeError('Attempt to Access to Undefined Prop: [ missingValue ]'));
 	});
 
 });
@@ -356,6 +377,28 @@ describe('deep extend works', () => {
 			`${networkedInstance.stringValue}`;
 
 		}).toThrow(new ReferenceError('Value Access Denied'));
+
+	});
+
+	test('builtin types works', () => {
+		expect(extendedArrayInstance).toBeInstanceOf(Array);
+		expect(extendedArrayInstance).toBeInstanceOf(ExtendedArray);
+		expect(extendedArrayInstance[0]).toBe(1);
+		extendedArrayInstance.unshift(0);
+		extendedArrayInstance.push(5);
+		expect(+extendedArrayInstance.length).toBe(5);
+		expect(+extendedArrayInstance[0]).toBe(0);
+		expect(+extendedArrayInstance[4]).toBe(5);
+
+		expect(extendedSetInstance).toBeInstanceOf(Set);
+		expect(extendedSetInstance).toBeInstanceOf(ExtendedSet);
+
+		// JS Object.create(new Set([1, 2, 3])) is doing the same error!
+		expect(() => {
+
+			extendedSetInstance.has(0);
+
+		}).toThrow(new TypeError('Method Set.prototype.has called on incompatible receiver [object Object]'));
 
 	});
 });

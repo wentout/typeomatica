@@ -1,6 +1,6 @@
 {
 	"name": "typeomatica",
-	"version": "0.1.7",
+	"version": "0.1.8",
 	"description": "type logic against javascript metaprogramming",
 	"main": "lib/index.js",
 	"scripts": {
