@@ -195,6 +195,15 @@ const handlers = {
 		if (result !== undefined) {
 			return result;
 		}
+		if (prop === 'toJSON') {
+			return function (this: typeof target) {
+				return JSON.stringify(Object.entries(this).reduce((obj, [key, value]) => {
+					// @ts-ignore
+					obj[key] = value.valueOf();
+					return obj;
+				}, {}));
+			}
+		}
 		throw new Error(`${ErrorsNames.MISSING_PROP}: [ ${String(prop).valueOf()} ]`);
 	},
 	set(_: object, prop: string, value: unknown, receiver: object) {

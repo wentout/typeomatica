@@ -113,6 +113,11 @@ describe('props tests', () => {
 
 	});
 
+	test('correct JSON.stringify', () => {
+		const stringifyResult = JSON.stringify(baseInstance);
+		expect(stringifyResult).toMatchSnapshot();
+	});
+
 	test('correct boolean constructor', () => {
 		expect(baseInstance.booleanValue).toBeInstanceOf(Boolean);
 	});
