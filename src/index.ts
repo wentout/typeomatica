@@ -215,7 +215,7 @@ const handlers = {
 // user have to precisely define all props
 const BaseTarget = Object.create(null);
 
-const BasePrototype = new Proxy(BaseTarget, handlers);
+// const BasePrototype = new Proxy(BaseTarget, handlers);
 
 export type IDEF<T, P = {}, R = {}> = {
 	new(...args: any[]): T;
@@ -246,7 +246,7 @@ const BaseConstructor = function (this: object, InstanceTarget = BaseTarget) {
 } as ObjectConstructor;
 // } as IDEF;
 
-Reflect.setPrototypeOf(BaseConstructor.prototype, BasePrototype);
+// Reflect.setPrototypeOf(BaseConstructor.prototype, BasePrototype);
 
 Object.defineProperty(module, 'exports', {
 	get() {
