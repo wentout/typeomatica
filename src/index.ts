@@ -209,7 +209,11 @@ const handlers = {
 	set(_: object, prop: string, value: unknown, receiver: object) {
 		const result = createProperty(prop, value, receiver);
 		return result;
-	}
+	},
+	// defineProperty(target: object, key: string, descriptor: object) {
+	// 	Reflect.defineProperty(target, key, descriptor);
+	// 	return true;
+	// }
 };
 
 // user have to precisely define all props
