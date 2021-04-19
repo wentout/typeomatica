@@ -83,7 +83,7 @@ describe('props tests', () => {
 			const { booleanValue } = baseInstance;
 			booleanValue != false;
 
-		}).toThrow();
+		}).toThrow(new TypeError('Value Access Denied'));
 	});
 
 	test('fails boolean arithmetics', () => {
@@ -91,7 +91,7 @@ describe('props tests', () => {
 
 			baseInstance.booleanValue + 5;
 
-		}).toThrow();
+		}).toThrow(new ReferenceError('Value Access Denied'));
 	});
 
 	test('correct boolean assignment', () => {
