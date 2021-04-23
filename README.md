@@ -1,4 +1,4 @@
-# typeomatica
+# Type ø matica
 
 [![Coverage Status](https://coveralls.io/repos/github/wentout/typeomatica/badge.svg?branch=main)](https://coveralls.io/github/wentout/typeomatica?branch=main)
 
