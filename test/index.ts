@@ -29,7 +29,6 @@ const upperInstance = Object.create(baseInstance);
 class SimpleBase extends BaseClass {
 	stringProp = '123';
 };
-
 const simpleInstance = new SimpleBase;
 
 type MyFunctionalConstructorInstance = {
@@ -44,7 +43,8 @@ Reflect.setPrototypeOf(MyFunctionalConstructor.prototype, new BasePrototype);
 
 const myFunctionalInstance = new MyFunctionalConstructor();
 
-class TripleExtend extends Base { };
+class SecondaryExtend extends Base { second = 123 };
+class TripleExtend extends SecondaryExtend { };
 const tiripleExtendInstance = new TripleExtend;
 
 class NetworkedExtention extends BasePrototype(tiripleExtendInstance) { };
@@ -368,9 +368,10 @@ describe('deep extend works', () => {
 	test('class extended three times construction', () => {
 
 		expect(tiripleExtendInstance).toBeInstanceOf(Base);
-		expect(tiripleExtendInstance).toBeInstanceOf(TripleExtend);
+		expect(tiripleExtendInstance).toBeInstanceOf(SecondaryExtend);
 		expect(tiripleExtendInstance).toBeInstanceOf(TripleExtend);
 		expect(`${tiripleExtendInstance.stringValue}`).toEqual('123');
+		expect(tiripleExtendInstance.second).toBeInstanceOf(Number);
 
 	});
 
