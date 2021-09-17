@@ -22,9 +22,9 @@
 		"removeComments": true,
 		"experimentalDecorators": true,
 		"forceConsistentCasingInFileNames": true,
-        "types": [
-            "jest",
-            "node"
-        ]
-    },
+		"types": [
+			"jest",
+			"node"
+		]
+	},
 }

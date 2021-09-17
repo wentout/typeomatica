@@ -4,7 +4,7 @@ module.exports = {
 	testMatch: ['**/test/**/index.ts', '**/test/**/addition.js'],
 	globals: {
 		'ts-jest': {
-			tsconfig: './tsconfig.spec.json'
+			tsconfig: './test/tsconfig.json'
 		}
 	},
 };
