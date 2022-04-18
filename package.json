@@ -9,7 +9,7 @@
 		"lint": "npx eslint --fix --ignore-path .gitignore ./lib",
 		"test": "npx jest",
 		"test:cov": "npx jest --collectCoverage",
-		"debug": "npx --node-arg=--inspect-brk jest"
+		"debug": "npx --node-options=--inspect-brk jest"
 	},
 	"keywords": [
 		"strict",
