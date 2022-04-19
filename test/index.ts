@@ -14,6 +14,15 @@ class Base extends BasePrototype({
 	},
 }) {
 	numberValue = 123;
+
+	get getterField () {
+		return '123';
+	}
+	
+	set setterField (value: string) {
+		this.stringValue = value;
+	}
+	
 	constructor() {
 		super();
 		this.stringValue = '123';
@@ -21,8 +30,9 @@ class Base extends BasePrototype({
 		this.objectValue = {};
 	}
 };
-
+debugger;
 const baseInstance = new Base;
+debugger;
 
 const upperInstance = Object.create(baseInstance);
 

@@ -26,7 +26,6 @@ const primitives = (initialValue: object) => {
 			const proxyAsValue = new Proxy(value, {
 				// get(target, prop, receiver) {
 				get(_, prop) {
-
 					if (prop === Symbol.toPrimitive) {
 						return function (hint: string) {
 							if (hint !== initialType) {
