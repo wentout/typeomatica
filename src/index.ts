@@ -1,135 +1,15 @@
 'use strict';
 
-const ErrorsNames = {
-	TYPE_MISMATCH: 'Type Mismatch',
-	ACCESS_DENIED: 'Value Access Denied',
-	MISSING_PROP: 'Attempt to Access to Undefined Prop',
-	RIP_FUNCTIONS: 'Functions are Restricted'
-};
+import { ErrorsNames } from './errors';
 
-const PRIMITIVE_TYPES = [
-	'string',
-	'number',
-	'boolean',
-];
-
-const isPrimitive = (value: unknown) => {
-	return PRIMITIVE_TYPES.includes(typeof value);
-};
-
-const primitives = (initialValue: object) => {
-	let value = Object(initialValue);
-	const initialType = typeof initialValue;
-
-	return {
-		get() {
-			const proxyAsValue = new Proxy(value, {
-				// get(target, prop, receiver) {
-				get(_, prop) {
-					if (prop === Symbol.toPrimitive) {
-						return function (hint: string) {
-							if (hint !== initialType) {
-								throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
-							}
-							return value.valueOf();
-						}
-					}
-
-					if (prop === 'valueOf') {
-						return function () {
-							return value.valueOf();
-						}
-					}
-
-					// @ts-ignore
-					if (value[prop] instanceof Function) {
-						return value[prop].bind(value);
-					}
-
-					return value[prop];
-				}
-			});
-			return proxyAsValue;
-		},
-		// get() {
-		// 	const preparedValue = {
-		// 		[Symbol.toPrimitive]() {
-		// 			return function () {
-		// 				throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
-		// 			};
-		// 		}
-		// 	};
-		// 	Reflect.setPrototypeOf(preparedValue, value);
-		// 	debugger;
-		// 	return preparedValue;
-		// },
-		set(replacementValue: unknown) {
-			if (replacementValue instanceof value.constructor) {
-				value = replacementValue;
-				return value;
-			}
-
-			const prevalue = Object(replacementValue);
-
-			if (prevalue instanceof value.constructor) {
-				value = prevalue;
-				return value;
-			}
-
-			const error = new TypeError(ErrorsNames.TYPE_MISMATCH);
-			throw error;
-		}
-	};
-};
-
-const special = (value: object) => {
-	return {
-		get() {
-			return value;
-		},
-		set(replacementValue: object) {
-			if (typeof replacementValue === typeof value) {
-				value = replacementValue;
-				return value;
-
-			}
-			const error = new TypeError(ErrorsNames.TYPE_MISMATCH);
-			throw error;
-		}
-	}
-};
-
-const nullish = (value: object) => {
-	return {
-		get() {
-			return value;
-		},
-		set() {
-			const error = new TypeError(ErrorsNames.TYPE_MISMATCH);
-			throw error;
-		}
-	}
-};
-
-const objects = (value: object) => {
-	return {
-		get() {
-			return value;
-		},
-		set(replacementValue: unknown) {
-			if (replacementValue instanceof Object && replacementValue.constructor === value.constructor) {
-				value = replacementValue;
-				return value;
-			}
-			const error = new TypeError(ErrorsNames.TYPE_MISMATCH);
-			throw error;
-		}
-	}
-};
-
-const functions = () => {
-	throw new TypeError(ErrorsNames.RIP_FUNCTIONS);
-};
+import {
+	functions,
+	nullish,
+	objects,
+	primitives,
+	special,
+	isPrimitive
+} from './types';
 
 const resolver = Object.entries({
 	primitives,
@@ -162,7 +42,7 @@ const resolver = Object.entries({
 	return obj;
 }, {});
 
-const createProperty = (propName: string, initialValue: any, receiver: object) => {
+const createProperty = (propName: string, initialValue: unknown, receiver: object) => {
 
 	const value = initialValue;
 	const valueIsPrimitive = isPrimitive(initialValue);
@@ -220,9 +100,9 @@ const BaseTarget = Object.create(null);
 
 // const BasePrototype = new Proxy(BaseTarget, handlers);
 
-export type IDEF<T, P = {}, R = {}> = {
-	new(...args: any[]): T;
-	(this: T, ...args: any[]): R;
+export interface IDEF<T, P = {}, R = {}> {
+	new(...args: unknown[]): T;
+	(this: T, ...args: unknown[]): R;
 	prototype: P;
 };
 
