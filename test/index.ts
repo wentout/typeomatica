@@ -5,7 +5,10 @@
 // or meaningless
 
 const BasePrototype = require('..');
-import { BaseClass, IDEF } from '..';
+// @ts-ignore
+import { BaseClass, IDEF, FieldConstructor } from '..';
+
+debugger;
 
 class Base extends BasePrototype({
 	additionalProp: 321,
@@ -15,24 +18,22 @@ class Base extends BasePrototype({
 }) {
 	numberValue = 123;
 
-	get getterField () {
+	get getterField() {
 		return '123';
 	}
-	
-	set setterField (value: string) {
+
+	set setterField(value: string) {
 		this.stringValue = value;
 	}
-	
+
 	constructor() {
 		super();
 		this.stringValue = '123';
 		this.booleanValue = true;
 		this.objectValue = {};
 	}
-};
-debugger;
+}
 const baseInstance = new Base;
-debugger;
 
 const upperInstance = Object.create(baseInstance);
 
@@ -46,6 +47,7 @@ type MyFunctionalConstructorInstance = {
 };
 
 const MyFunctionalConstructor = function () {
+	// @ts-ignore
 	this.stringProp = '123';
 } as IDEF<MyFunctionalConstructorInstance>;
 
@@ -68,6 +70,38 @@ const extendedArrayInstance = new ExtendedArray;
 const extendedSetInstance = new ExtendedSet;
 
 const MUTATION_VALUE = -2;
+
+
+class MyFieldConstructor extends FieldConstructor {
+	constructor(value: string) {
+		super(value);
+		Reflect.defineProperty(this, 'enumerable', {
+			value: true
+		});
+		Reflect.defineProperty(this, 'get', {
+			get () {
+				return function () {
+					return value;
+				}
+			}
+		});
+		Reflect.defineProperty(this, 'set', {
+			get () {
+				return function (_value: string) {
+					value = _value;
+				}
+			},
+			enumerable: true
+		});
+	}
+}
+
+const myField = new MyFieldConstructor('zzz');
+class MadeFieldClass extends BaseClass { myField = myField };
+class SecondMadeFieldClass extends BaseClass { myField = myField };
+const madeFieldInstance = new MadeFieldClass;
+const secondMadeFieldInstance = new MadeFieldClass;
+const thirdMadeFieldInstance = new SecondMadeFieldClass;
 
 describe('props tests', () => {
 
@@ -135,6 +169,25 @@ describe('props tests', () => {
 	test('correct object assignment', () => {
 		baseInstance.objectValue = { a: 123 };
 		expect(baseInstance.objectValue.a).toEqual(123);
+	});
+
+	test('correct custom field creation', () => {
+		expect(madeFieldInstance.myField).toEqual('zzz');
+	});
+	test('correct custom field assignment', () => {
+		madeFieldInstance.myField = 123;
+		expect(secondMadeFieldInstance.myField).toEqual(123);
+		expect(thirdMadeFieldInstance.myField).toEqual(123);
+	});
+
+	test('correct custom missing prop search creation', () => {
+		// @ts-ignore
+		expect(madeFieldInstance[Symbol.toStringTag]).toEqual(undefined);
+		// @ts-ignore
+		expect(madeFieldInstance[Symbol.iterator]).toEqual(undefined);
+		const util = require('util');
+		// @ts-ignore
+		expect(madeFieldInstance[util.inspect.custom]).toEqual(undefined);
 	});
 
 	test('wrong assignment to objects', () => {
@@ -259,7 +312,7 @@ describe('props tests', () => {
 
 			baseInstance.missingValue > 1;
 
-		}).toThrow(new TypeError('Attempt to Access to Undefined Prop: [ missingValue ]'));
+		}).toThrow(new TypeError('Attempt to Access to Undefined Prop: [ missingValue ] of Base'));
 	});
 
 });

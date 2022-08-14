@@ -11,7 +11,6 @@ export const special = (value: object) => {
 			if (typeof replacementValue === typeof value) {
 				value = replacementValue;
 				return value;
-
 			}
 			const error = new TypeError(ErrorsNames.TYPE_MISMATCH);
 			throw error;

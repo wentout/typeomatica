@@ -11,6 +11,8 @@ import {
 	isPrimitive
 } from './types';
 
+import { FieldConstructor } from './fields';
+
 const resolver = Object.entries({
 	primitives,
 	special,
@@ -42,6 +44,7 @@ const resolver = Object.entries({
 	return obj;
 }, {});
 
+
 const createProperty = (propName: string, initialValue: unknown, receiver: object) => {
 
 	const value = initialValue;
@@ -50,23 +53,40 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 	const isFunction = initialValue instanceof Function;
 	const isNull = initialValue === null;
 
+	/**
+	 * special: undefined or BigInt or Symbol
+	 * 	or other non constructible type
+	 */
+
 	const type = valueIsPrimitive ? 'primitives' : (
 		isObject ? (
 			isNull ? 'nullish' : 'objects'
 		) : (
-			isFunction ? 'functions' : 'special'));
+			isFunction ? 'functions' : 'special'
+		)
+	);
 
-	// @ts-ignore
-	const descriptor = resolver[type](value, receiver);
+	const descriptor = (isObject && (value instanceof FieldConstructor)) ?
+		value
+		:
+		{
+			enumerable: true,
+			// @ts-ignore
+			...resolver[type](value, receiver),
+		};
 
-	const result = Reflect.defineProperty(receiver, propName, {
-		...descriptor,
-		enumerable: true
-	});
+	// if (value instanceof FieldConstructor) {
+	// 	descriptor;
+	// 	debugger;
+	// }
 
+	const result = Reflect.defineProperty(receiver, propName, descriptor);
 	return result;
+
 };
 
+const util = require('util');
+const props2skip = new Set([util.inspect.custom, Symbol.toStringTag, Symbol.iterator]);
 
 const handlers = {
 	get(target: object, prop: string | symbol, receiver: object) {
@@ -83,7 +103,10 @@ const handlers = {
 				}, {}));
 			}
 		}
-		throw new Error(`${ErrorsNames.MISSING_PROP}: [ ${String(prop).valueOf()} ]`);
+		if (props2skip.has(prop)) {
+			return undefined;
+		}
+		throw new Error(`${ErrorsNames.MISSING_PROP}: [ ${String(prop).valueOf()} ] of ${receiver.constructor.name}`);
 	},
 	set(_: object, prop: string, value: unknown, receiver: object) {
 		const result = createProperty(prop, value, receiver);
@@ -99,12 +122,6 @@ const handlers = {
 const BaseTarget = Object.create(null);
 
 // const BasePrototype = new Proxy(BaseTarget, handlers);
-
-export interface IDEF<T, P = {}, R = {}> {
-	new(...args: unknown[]): T;
-	(this: T, ...args: unknown[]): R;
-	prototype: P;
-};
 
 // @ts-ignore
 const BaseConstructor = function (this: object, InstanceTarget = BaseTarget) {
@@ -140,6 +157,7 @@ Object.defineProperty(module, 'exports', {
 
 // @ts-ignore
 export class BaseClass extends BaseConstructor { };
+// export { FieldConstructor } from './fields';
 
 Object.defineProperty(module.exports, 'BaseClass', {
 	get() {
@@ -147,3 +165,16 @@ Object.defineProperty(module.exports, 'BaseClass', {
 	},
 	enumerable: true
 });
+Object.defineProperty(module.exports, 'FieldConstructor', {
+	get() {
+		return FieldConstructor;
+	},
+	enumerable: true
+});
+
+
+export type IDEF<T, P = {}, R = {}> = {
+	new(...args: unknown[]): T;
+	(this: T, ...args: unknown[]): R;
+	prototype: P;
+};
