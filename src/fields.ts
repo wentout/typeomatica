@@ -2,6 +2,8 @@
 
 export const SymbolInitialValue = Symbol('Initial Value');
 
+import { ErrorsNames } from './errors'
+
 interface FieldDefinition  {
 	[SymbolInitialValue]: unknown
 	// get?: unknown
@@ -11,9 +13,27 @@ interface FieldDefinition  {
 	// writable: boolean
 }
 
-export const FieldConstructor = function (this: FieldDefinition, value: unknown) {
-	this[SymbolInitialValue] = value;
-} as ObjectConstructor;
+// export const FieldConstructor = function (this: FieldDefinition, value: unknown) {
+// 	this[SymbolInitialValue] = value;
+// } as ObjectConstructor;
+
+export class FieldConstructor implements FieldDefinition {
+	[SymbolInitialValue]: unknown
+	public get get () {
+		const self = this;
+		return function (this: FieldDefinition) {
+			return self[SymbolInitialValue];
+		}
+	}
+	public get set () {
+		return function () {
+			throw new TypeError(ErrorsNames.FORBIDDEN_RE);
+		}
+	}
+	constructor (value: unknown) {
+		this[SymbolInitialValue] = value;
+	}
+}
 
 // Object.assign(FieldConstructor.prototype, {
 // 	configurable: false,

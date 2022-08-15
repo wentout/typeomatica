@@ -72,23 +72,61 @@ const extendedSetInstance = new ExtendedSet;
 const MUTATION_VALUE = -2;
 
 
-class MyFieldConstructor extends FieldConstructor {
+class MyFieldConstructorNoRe extends FieldConstructor {
+	_value: string
 	constructor(value: string) {
 		super(value);
 		Reflect.defineProperty(this, 'enumerable', {
 			value: true
 		});
+		this._value = value;
+	}
+}
+class MyFieldConstructorReGet extends MyFieldConstructorNoRe {
+	constructor(value: string) {
+		super(value);
+		const self = this;
+		Reflect.defineProperty(this, 'enumerable', {
+			value: true
+		});
 		Reflect.defineProperty(this, 'get', {
-			get () {
+			get() {
 				return function () {
-					return value;
+					return self._value;
 				}
-			}
+			},
+			enumerable: true
+		});
+	}
+}
+class MyFieldConstructorReSet extends MyFieldConstructorNoRe {
+	constructor(value: string) {
+		super(value);
+		const self = this;
+		Reflect.defineProperty(this, 'enumerable', {
+			value: true
 		});
 		Reflect.defineProperty(this, 'set', {
-			get () {
-				return function (_value: string) {
-					value = _value;
+			get() {
+				return function (value: string) {
+					self._value = value;
+				}
+			},
+			enumerable: true
+		});
+	}
+}
+class MyFieldConstructor extends MyFieldConstructorReGet {
+	constructor(value: string) {
+		super(value);
+		const self = this;
+		Reflect.defineProperty(this, 'enumerable', {
+			value: true
+		});
+		Reflect.defineProperty(this, 'set', {
+			get() {
+				return function (value: string) {
+					self._value = value;
 				}
 			},
 			enumerable: true
@@ -96,12 +134,20 @@ class MyFieldConstructor extends FieldConstructor {
 	}
 }
 
-const myField = new MyFieldConstructor('zzz');
-class MadeFieldClass extends BaseClass { myField = myField };
-class SecondMadeFieldClass extends BaseClass { myField = myField };
+const myField = new MyFieldConstructor('initial value');
+const myFieldReGet = new MyFieldConstructorReGet('initial value for get check');
+const myFieldReSet = new MyFieldConstructorReSet('initial value for set check');
+
+class MadeFieldClass extends BaseClass { myField = myField as unknown | string };
+class SecondMadeFieldClass extends BaseClass { myField = myField as unknown | string };
 const madeFieldInstance = new MadeFieldClass;
 const secondMadeFieldInstance = new MadeFieldClass;
 const thirdMadeFieldInstance = new SecondMadeFieldClass;
+
+class MadeReGet extends BaseClass { myField = myFieldReGet as unknown | string }
+class MadeReSet extends BaseClass { myField = myFieldReSet as unknown | string }
+const madeReGet = new MadeReGet;
+const madeReSet = new MadeReSet;
 
 describe('props tests', () => {
 
@@ -172,12 +218,45 @@ describe('props tests', () => {
 	});
 
 	test('correct custom field creation', () => {
-		expect(madeFieldInstance.myField).toEqual('zzz');
+		expect(madeFieldInstance.myField).toEqual('initial value');
 	});
+
 	test('correct custom field assignment', () => {
-		madeFieldInstance.myField = 123;
-		expect(secondMadeFieldInstance.myField).toEqual(123);
-		expect(thirdMadeFieldInstance.myField).toEqual(123);
+		madeFieldInstance.myField = 'replaced';
+		expect(secondMadeFieldInstance.myField).toEqual('replaced');
+		expect(thirdMadeFieldInstance.myField).toEqual('replaced');
+	});
+
+	test('correct custom field no-re-assignment', () => {
+		expect(madeReGet.myField).toEqual('initial value for get check');
+		expect(() => {
+
+			madeReGet.myField = 'replaced';
+
+		}).toThrow(new TypeError('Re-Assirnment is Forbidden'));
+	});
+
+	test('correct custom field setter only', () => {
+		madeReSet.myField = 'replaced';
+		expect(madeReSet.myField).toEqual('initial value for set check');
+	});
+
+	test('takes error on wrong field definition', () => {
+		expect(() => {
+			class WrongFieldConstructor extends FieldConstructor {
+				value: number
+				constructor(value: number) {
+					super(value)
+					this.value = value;
+				}
+			}
+			const wrongField = new WrongFieldConstructor(123);
+			class WithWrongField extends BaseClass {
+				erroredField = wrongField
+			}
+			new WithWrongField;
+
+		}).toThrow();
 	});
 
 	test('correct custom missing prop search creation', () => {
@@ -188,6 +267,10 @@ describe('props tests', () => {
 		const util = require('util');
 		// @ts-ignore
 		expect(madeFieldInstance[util.inspect.custom]).toEqual(undefined);
+		// @ts-ignore
+		const inspected = util.inspect(madeFieldInstance);
+		const expected = 'MadeFieldClass { myField: [Getter/Setter] }';
+		expect(expected).toEqual(expected);
 	});
 
 	test('wrong assignment to objects', () => {

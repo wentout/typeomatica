@@ -80,13 +80,20 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 	// 	debugger;
 	// }
 
-	const result = Reflect.defineProperty(receiver, propName, descriptor);
-	return result;
+	try {
+		const result = Reflect.defineProperty(receiver, propName, descriptor);
+		return result;
+	} catch (error) {
+		// debugger;
+		throw error;
+	}
 
 };
 
+const props2skip = new Set([Symbol.toStringTag, Symbol.iterator]);
 const util = require('util');
-const props2skip = new Set([util.inspect.custom, Symbol.toStringTag, Symbol.iterator]);
+const hasNodeInspect = (util && util.inspect && util.inspect.custom);
+hasNodeInspect && (props2skip.add(util.inspect.custom));
 
 const handlers = {
 	get(target: object, prop: string | symbol, receiver: object) {
@@ -103,6 +110,7 @@ const handlers = {
 				}, {}));
 			}
 		}
+		// @ts-ignore
 		if (props2skip.has(prop)) {
 			return undefined;
 		}

@@ -1,2 +1,11 @@
 export declare const SymbolInitialValue: unique symbol;
-export declare const FieldConstructor: ObjectConstructor;
+interface FieldDefinition {
+    [SymbolInitialValue]: unknown;
+}
+export declare class FieldConstructor implements FieldDefinition {
+    [SymbolInitialValue]: unknown;
+    get get(): (this: FieldDefinition) => unknown;
+    get set(): () => never;
+    constructor(value: unknown);
+}
+export {};
