@@ -44,7 +44,6 @@ const resolver = Object.entries({
 	return obj;
 }, {});
 
-
 const createProperty = (propName: string, initialValue: unknown, receiver: object) => {
 
 	const value = initialValue;

@@ -1,5 +1,7 @@
 'use strict';
 
+import { describe, expect, test } from '@jest/globals';
+
 // BasePrototype & BaseClass are the same function
 // go as you want for being meaningfull
 // or meaningless
@@ -7,8 +9,6 @@
 const BasePrototype = require('..');
 // @ts-ignore
 import { BaseClass, IDEF, FieldConstructor } from '..';
-
-debugger;
 
 class Base extends BasePrototype({
 	additionalProp: 321,
