@@ -1,3 +1,3 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`props tests correct JSON.stringify 1`] = `"\\"{\\\\\\"numberValue\\\\\\":123,\\\\\\"stringValue\\\\\\":\\\\\\"123\\\\\\",\\\\\\"booleanValue\\\\\\":false,\\\\\\"objectValue\\\\\\":{}}\\""`;
+exports[`props tests correct JSON.stringify 1`] = `""{\\"numberValue\\":123,\\"stringValue\\":\\"123\\",\\"booleanValue\\":false,\\"objectValue\\":{}}""`;
