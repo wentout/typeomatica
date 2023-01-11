@@ -3,7 +3,7 @@
 	"version": "0.2.9",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
-		"node": ">=12"
+		"node": ">=14"
 	},
 	"main": "lib/index.js",
 	"scripts": {
