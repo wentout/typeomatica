@@ -1,4 +1,4 @@
-export declare const SymbolInitialValue: unique symbol;
+declare const SymbolInitialValue: unique symbol;
 interface FieldDefinition {
     [SymbolInitialValue]: unknown;
 }
@@ -7,5 +7,6 @@ export declare class FieldConstructor implements FieldDefinition {
     get get(): (this: FieldDefinition) => unknown;
     get set(): () => never;
     constructor(value: unknown);
+    static get SymbolInitialValue(): symbol;
 }
 export {};

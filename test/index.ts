@@ -10,16 +10,31 @@ const BasePrototype = require('..');
 // @ts-ignore
 import { BaseClass, IDEF, FieldConstructor } from '..';
 
+const { SymbolInitialValue } = FieldConstructor;
+
+interface IBase {
+	get getterField(): string
+	set setterField(value: string)
+	numberValue: number
+	stringValue: string
+	booleanValue: boolean
+	objectValue: object
+}
+
 class Base extends BasePrototype({
 	additionalProp: 321,
 	someMethod() {
 		return this.numberValue.valueOf();
 	},
-}) {
+}) implements IBase {
 	numberValue = 123;
+	stringValue: string
+	booleanValue: boolean
+	objectValue: object
 
 	get getterField() {
-		return '123';
+		const answer = `${this.stringValue}`;
+		return answer;
 	}
 
 	set setterField(value: string) {
@@ -138,7 +153,20 @@ const myField = new MyFieldConstructor('initial value');
 const myFieldReGet = new MyFieldConstructorReGet('initial value for get check');
 const myFieldReSet = new MyFieldConstructorReSet('initial value for set check');
 
-class MadeFieldClass extends BaseClass { myField = myField as unknown | string };
+class MadeFieldClass extends BaseClass {
+	myField = myField as unknown | string
+	get [SymbolInitialValue] () {
+		const self = this;
+		return (fieldName: 'myField') => {
+			if (fieldName !== 'myField') {
+				return self[fieldName];
+			}
+			// @ts-ignore
+			const answer = myField[SymbolInitialValue];
+			return  answer;
+		};
+	}
+};
 class SecondMadeFieldClass extends BaseClass { myField = myField as unknown | string };
 const madeFieldInstance = new MadeFieldClass;
 const secondMadeFieldInstance = new MadeFieldClass;
@@ -152,12 +180,36 @@ const madeReSet = new MadeReSet;
 describe('props tests', () => {
 
 	test('base instance has props', () => {
+		var gf: string;
+		var sv: string;
 		expect(Object.keys(baseInstance)).toEqual(["numberValue", "stringValue", "booleanValue", "objectValue"]);
+
+		gf = baseInstance.getterField;
+		expect(gf).toEqual('123');
+		sv = baseInstance.stringValue;
+		expect(sv.valueOf()).toEqual('123');
+
+
+		baseInstance.setterField = '12345';
+
+		gf = baseInstance.getterField;
+		expect(gf).toEqual('12345');
+		sv = baseInstance.stringValue;
+		expect(sv.valueOf()).toEqual('12345');
+
+		baseInstance.setterField = '123';
+
+		gf = baseInstance.getterField;
+		expect(gf).toEqual('123');
+		sv = baseInstance.stringValue;
+		expect(`${sv}`).toEqual('123');
 	});
 
 	test('simple instance works & strings too', () => {
 		expect(simpleInstance.stringProp.toString()).toBe('123');
 		expect(simpleInstance.stringProp.length).toBe(3);
+
+
 		expect(/String$/.test(simpleInstance.stringProp.constructor.name)).toBe(true);
 		expect(() => {
 
@@ -179,6 +231,7 @@ describe('props tests', () => {
 	test('fails boolean arithmetics', () => {
 		expect(() => {
 
+			// @ts-ignore
 			baseInstance.booleanValue + 5;
 
 		}).toThrow(new ReferenceError('Value Access Denied'));
@@ -191,12 +244,13 @@ describe('props tests', () => {
 
 		// warning!
 		// booleanValue does not rely on baseInstance anymore!
+		// @ts-ignore
 		booleanValue = new Boolean(false);
 
 		let value = baseInstance.booleanValue.valueOf();
 		expect(value).toEqual(true);
 
-
+		// @ts-ignore
 		baseInstance.booleanValue = new Boolean(false);
 		value = baseInstance.booleanValue.valueOf();
 		expect(value).toEqual(false);
@@ -214,6 +268,7 @@ describe('props tests', () => {
 
 	test('correct object assignment', () => {
 		baseInstance.objectValue = { a: 123 };
+		// @ts-ignore
 		expect(baseInstance.objectValue.a).toEqual(123);
 	});
 
@@ -222,6 +277,17 @@ describe('props tests', () => {
 	});
 
 	test('correct custom field assignment', () => {
+		madeFieldInstance.myField = 'replaced';
+		// @ts-ignore
+		const initialValue = madeFieldInstance[SymbolInitialValue]('myField');
+		expect(initialValue).toEqual('initial value');
+		expect(secondMadeFieldInstance.myField).toEqual('replaced');
+		expect(thirdMadeFieldInstance.myField).toEqual('replaced');
+
+		madeFieldInstance.myField = 'replaced secondary';
+		expect(secondMadeFieldInstance.myField).toEqual('replaced secondary');
+		expect(thirdMadeFieldInstance.myField).toEqual('replaced secondary');
+
 		madeFieldInstance.myField = 'replaced';
 		expect(secondMadeFieldInstance.myField).toEqual('replaced');
 		expect(thirdMadeFieldInstance.myField).toEqual('replaced');
@@ -276,7 +342,7 @@ describe('props tests', () => {
 	test('wrong assignment to objects', () => {
 
 		expect(() => {
-
+			// @ts-ignore
 			baseInstance.objectValue = 123;
 
 		}).toThrow(new TypeError('Type Mismatch'));
@@ -321,7 +387,7 @@ describe('props tests', () => {
 
 	test('wrong assignment', () => {
 		expect(() => {
-
+			// @ts-ignore
 			baseInstance.booleanValue = 123;
 
 		}).toThrow(new TypeError('Type Mismatch'));
