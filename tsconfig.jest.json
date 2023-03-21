@@ -28,7 +28,11 @@
 		]
 	},
 	"include": [
-		"./src/**/*.ts",
-		"./test/**/*"
+		"./test/**/*.ts"
+	],
+	"exclude": [
+		"./lib/**/*",
+		"./coverage/**/*",
+		"./node_modules/**/*",
 	]
 }

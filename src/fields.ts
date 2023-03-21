@@ -1,8 +1,8 @@
 'use strict';
 
-export const SymbolInitialValue = Symbol('Initial Value');
-
 import { ErrorsNames } from './errors'
+
+const SymbolInitialValue = Symbol('Initial Value');
 
 interface FieldDefinition  {
 	[SymbolInitialValue]: unknown
@@ -32,6 +32,9 @@ export class FieldConstructor implements FieldDefinition {
 	}
 	constructor (value: unknown) {
 		this[SymbolInitialValue] = value;
+	}
+	static get SymbolInitialValue () {
+		return SymbolInitialValue;
 	}
 }
 

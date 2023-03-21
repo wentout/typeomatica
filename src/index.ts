@@ -29,14 +29,16 @@ const resolver = Object.entries({
 				if (invocationThis !== receiver) {
 					throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
 				}
-				return handler.get();
+				const result = handler.get();
+				return result;
 			},
 			set(replacementValue: unknown) {
 				const invocationThis = this;
 				if (invocationThis !== receiver) {
 					throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
 				}
-				return handler.set(replacementValue);
+				const result = handler.set(replacementValue);
+				return result;
 			}
 		}
 	};
@@ -79,13 +81,8 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 	// 	debugger;
 	// }
 
-	try {
-		const result = Reflect.defineProperty(receiver, propName, descriptor);
-		return result;
-	} catch (error) {
-		// debugger;
-		throw error;
-	}
+	const result = Reflect.defineProperty(receiver, propName, descriptor);
+	return result;
 
 };
 
@@ -133,11 +130,11 @@ const BaseTarget = Object.create(null);
 // @ts-ignore
 const BaseConstructor = function (this: object, InstanceTarget = BaseTarget) {
 	if (!new.target) {
-		const constructor = BaseConstructor.bind(this, InstanceTarget);
-		constructor.prototype = {
+		const self = BaseConstructor.bind(this, InstanceTarget);
+		self.prototype = {
 			constructor: BaseConstructor
 		};
-		return constructor;
+		return self;
 	}
 
 	const InstancePrototype = new Proxy(InstanceTarget, handlers);

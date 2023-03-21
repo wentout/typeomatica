@@ -31,7 +31,8 @@ export const primitives = (initialValue: object) => {
 						return value[prop].bind(value);
 					}
 
-					return value[prop];
+					const answer = value[prop];
+					return answer;
 				}
 			});
 			return proxyAsValue;
