@@ -30,17 +30,17 @@
 		"url": "git+https://github.com/wentout/typeomatica.git"
 	},
 	"devDependencies": {
-		"@types/jest": "^29.5.0",
-		"@types/node": "^18.15.5",
-		"eslint": "^8.36.0",
+		"@types/jest": "^29.5.3",
+		"@types/node": "^18.17.4",
+		"eslint": "^8.46.0",
 		"husky": "^8.0.3",
-		"jest": "^29.5.0",
+		"jest": "^29.6.2",
 		"json5": "^2.2.3",
-		"lint-staged": "^13.2.0",
+		"lint-staged": "^13.2.3",
 		"set-value": "^4.1.0",
-		"ts-jest": "^29.0.5",
+		"ts-jest": "^29.1.1",
 		"ts-node": "^10.9.1",
-		"typescript": "^5.0.2",
-		"yarn": "^2.2.2"
+		"typescript": "^5.1.6",
+		"yarn": "^2.4.3"
 	}
 }
