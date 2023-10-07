@@ -4,7 +4,7 @@ interface FieldDefinition {
 }
 export declare class FieldConstructor implements FieldDefinition {
     [SymbolInitialValue]: unknown;
-    get get(): (this: FieldDefinition) => unknown;
+    get get(): () => unknown;
     get set(): () => never;
     constructor(value: unknown);
     static get SymbolInitialValue(): symbol;

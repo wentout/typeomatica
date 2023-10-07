@@ -1,26 +1,23 @@
 module.exports = {
+	parser: '@typescript-eslint/parser',
 	env: {
 		node: true,
 		es6: true,
 	},
-	extends: ['eslint:recommended'],
+	extends: [
+		'eslint:recommended',
+		'plugin:@typescript-eslint/eslint-recommended'
+	],
 	parserOptions: {
 		ecmaVersion: 2018,
+		sourceType: 'module'
 	},
 	rules: {
-		'indent': ['error', 'tab'],
-		'key-spacing': [
-			'warn',
-			{
-				beforeColon: true,
-				afterColon: true,
-				align: 'colon',
-			},
-		],
+		indent: ['error', 'tab'],
 		'linebreak-style': ['error', 'unix'],
 		quotes: ['error', 'single'],
 		semi: ['error', 'always'],
-		'no-unused-vars': 'warn',
+		// 'no-unused-vars': 'warn',
 		'no-shadow': [
 			'error',
 			{
@@ -29,13 +26,13 @@ module.exports = {
 				allow: [],
 			},
 		],
-		'space-before-function-paren': [
-			'warn', {
-				'anonymous': 'always',
-				'named': 'always',
-				'asyncArrow': 'always'
-			}
-		],
+		// 'space-before-function-paren': [
+		// 	'warn', {
+		// 		'anonymous': 'always',
+		// 		'named': 'always',
+		// 		'asyncArrow': 'always'
+		// 	}
+		// ],
 		'prefer-template': 'warn',
 		'prefer-spread': 'warn',
 		'no-useless-concat': 'warn',
@@ -60,7 +57,6 @@ module.exports = {
 				position: 'above',
 			},
 		],
-		quotes: ['error', 'single'],
 		yoda: 'warn',
 	},
 	'overrides': [

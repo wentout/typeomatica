@@ -5,15 +5,14 @@ import { describe, expect, test } from '@jest/globals';
 // BasePrototype & BaseClass are the same function
 // go as you want for being meaningfull
 // or meaningless
-
 const BasePrototype = require('..');
-// @ts-ignore
-import { BaseClass, IDEF, FieldConstructor } from '..';
+import { BaseClass, FieldConstructor } from '..';
 
 const { SymbolInitialValue } = FieldConstructor;
 
 interface IBase {
 	get getterField(): string
+	// eslint-disable-next-line no-unused-vars
 	set setterField(value: string)
 	numberValue: number
 	stringValue: string
@@ -21,6 +20,27 @@ interface IBase {
 	objectValue: object
 }
 
+let decoratedSomeProp = 0;
+// const s = BasePrototype({ someProp: 123 });
+// console.log(s);
+
+
+// eslint-disable-next-line new-cap
+@BasePrototype({ someProp: 123 })
+class DecoratedByBase {
+	someProp!: number;
+}
+
+class ExtendedDecoratedByBase extends DecoratedByBase {
+	someProp: number;
+	constructor() {
+		super();
+		this.someProp = 321;
+		decoratedSomeProp = this.someProp;
+	}
+}
+
+// eslint-disable-next-line new-cap
 class Base extends BasePrototype({
 	additionalProp: 321,
 	someMethod() {
@@ -28,9 +48,9 @@ class Base extends BasePrototype({
 	},
 }) implements IBase {
 	numberValue = 123;
-	stringValue: string
-	booleanValue: boolean
-	objectValue: object
+	stringValue: string;
+	booleanValue: boolean;
+	objectValue: object;
 
 	get getterField() {
 		const answer = `${this.stringValue}`;
@@ -46,6 +66,18 @@ class Base extends BasePrototype({
 		this.stringValue = '123';
 		this.booleanValue = true;
 		this.objectValue = {};
+		// ES2022
+		// Object.defineProperty(this, 'getterField', {
+		// 	get() {
+		// 		const answer = `${this.stringValue}`;
+		// 		return answer;
+		// 	}
+		// });
+		// Object.defineProperty(this, 'setterField', {
+		// 	set(value: string) {
+		// 		this.stringValue = value;
+		// 	}
+		// });
 	}
 }
 const baseInstance = new Base;
@@ -54,32 +86,45 @@ const upperInstance = Object.create(baseInstance);
 
 class SimpleBase extends BaseClass {
 	stringProp = '123';
-};
+	// ES2022
+	// stringProp: string;
+	// constructor() {
+	// 	super();
+	// 	this.stringProp = '123';
+	// }
+}
 const simpleInstance = new SimpleBase;
 
-type MyFunctionalConstructorInstance = {
-	stringProp: string
-};
+interface IFCstr<S> {
+	(): void
+	new(): {
+		[key in keyof S]: S[key]
+	}
+}
 
-const MyFunctionalConstructor = function () {
-	// @ts-ignore
+type TmyFunctionalInstance = { stringProp: string }
+// eslint-disable-next-line no-unused-vars
+const MyFunctionalConstructor = function (this: TmyFunctionalInstance) {
 	this.stringProp = '123';
-} as IDEF<MyFunctionalConstructorInstance>;
+} as IFCstr<TmyFunctionalInstance>;
 
 Reflect.setPrototypeOf(MyFunctionalConstructor.prototype, new BasePrototype);
 
 const myFunctionalInstance = new MyFunctionalConstructor();
 
-class SecondaryExtend extends Base { second = 123 };
-class TripleExtend extends SecondaryExtend { };
+class SecondaryExtend extends Base { second = 123; }
+class TripleExtend extends SecondaryExtend { }
 const tiripleExtendInstance = new TripleExtend;
 
-class NetworkedExtention extends BasePrototype(tiripleExtendInstance) { };
+// eslint-disable-next-line new-cap
+class NetworkedExtention extends BasePrototype(tiripleExtendInstance) { }
 
 const networkedInstance = new NetworkedExtention;
 
-class ExtendedArray extends BasePrototype([1, 2, 3]) { };
-class ExtendedSet extends BasePrototype(new Set([1, 2, 3])) { };
+// eslint-disable-next-line new-cap
+class ExtendedArray extends BasePrototype([1, 2, 3]) { }
+// eslint-disable-next-line new-cap
+class ExtendedSet extends BasePrototype(new Set([1, 2, 3])) { }
 
 const extendedArrayInstance = new ExtendedArray;
 const extendedSetInstance = new ExtendedSet;
@@ -88,7 +133,7 @@ const MUTATION_VALUE = -2;
 
 
 class MyFieldConstructorNoRe extends FieldConstructor {
-	_value: string
+	_value: string;
 	constructor(value: string) {
 		super(value);
 		Reflect.defineProperty(this, 'enumerable', {
@@ -108,7 +153,7 @@ class MyFieldConstructorReGet extends MyFieldConstructorNoRe {
 			get() {
 				return function () {
 					return self._value;
-				}
+				};
 			},
 			enumerable: true
 		});
@@ -123,9 +168,9 @@ class MyFieldConstructorReSet extends MyFieldConstructorNoRe {
 		});
 		Reflect.defineProperty(this, 'set', {
 			get() {
-				return function (value: string) {
-					self._value = value;
-				}
+				return function (_value: string) {
+					self._value = _value;
+				};
 			},
 			enumerable: true
 		});
@@ -140,9 +185,9 @@ class MyFieldConstructor extends MyFieldConstructorReGet {
 		});
 		Reflect.defineProperty(this, 'set', {
 			get() {
-				return function (value: string) {
-					self._value = value;
-				}
+				return function (_value: string) {
+					self._value = _value;
+				};
 			},
 			enumerable: true
 		});
@@ -154,35 +199,49 @@ const myFieldReGet = new MyFieldConstructorReGet('initial value for get check');
 const myFieldReSet = new MyFieldConstructorReSet('initial value for set check');
 
 class MadeFieldClass extends BaseClass {
-	myField = myField as unknown | string
-	get [SymbolInitialValue] () {
+	myField = myField as unknown | string;
+	get [SymbolInitialValue]() {
 		const self = this;
 		return (fieldName: 'myField') => {
 			if (fieldName !== 'myField') {
 				return self[fieldName];
 			}
-			// @ts-ignore
+			//@ts-ignore
 			const answer = myField[SymbolInitialValue];
-			return  answer;
+			return answer;
 		};
 	}
-};
-class SecondMadeFieldClass extends BaseClass { myField = myField as unknown | string };
+}
+class SecondMadeFieldClass extends BaseClass { myField = myField as unknown | string; }
 const madeFieldInstance = new MadeFieldClass;
 const secondMadeFieldInstance = new MadeFieldClass;
 const thirdMadeFieldInstance = new SecondMadeFieldClass;
 
-class MadeReGet extends BaseClass { myField = myFieldReGet as unknown | string }
-class MadeReSet extends BaseClass { myField = myFieldReSet as unknown | string }
+class MadeReGet extends BaseClass { myField = myFieldReGet as unknown | string; }
+class MadeReSet extends BaseClass { myField = myFieldReSet as unknown | string; }
 const madeReGet = new MadeReGet;
 const madeReSet = new MadeReSet;
 
 describe('props tests', () => {
 
+	test('decorators works', () => {
+		const rgp = Reflect.getPrototypeOf;
+		// eslint-disable-next-line no-debugger
+		// debugger;
+		const decorated = new DecoratedByBase;
+		const exdecorated = new ExtendedDecoratedByBase;
+		expect(decoratedSomeProp.valueOf()).toEqual(321);
+		expect(exdecorated.someProp.valueOf()).toEqual(321);
+		expect(decorated.someProp.valueOf()).toEqual(123);
+		const proto = rgp(decorated);
+		//@ts-ignore;
+		expect(proto.someProp).toEqual(123);
+	});
+
 	test('base instance has props', () => {
-		var gf: string;
-		var sv: string;
-		expect(Object.keys(baseInstance)).toEqual(["numberValue", "stringValue", "booleanValue", "objectValue"]);
+		let gf: string;
+		let sv: string;
+		expect(Object.keys(baseInstance)).toEqual(['numberValue', 'stringValue', 'booleanValue', 'objectValue']);
 
 		gf = baseInstance.getterField;
 		expect(gf).toEqual('123');
@@ -213,6 +272,8 @@ describe('props tests', () => {
 		expect(/String$/.test(simpleInstance.stringProp.constructor.name)).toBe(true);
 		expect(() => {
 
+			// eslint-disable-next-line no-debugger
+			debugger;
 			// @ts-ignore
 			simpleInstance.stringProp = 123;
 
@@ -310,15 +371,15 @@ describe('props tests', () => {
 	test('takes error on wrong field definition', () => {
 		expect(() => {
 			class WrongFieldConstructor extends FieldConstructor {
-				value: number
+				value: number;
 				constructor(value: number) {
-					super(value)
+					super(value);
 					this.value = value;
 				}
 			}
 			const wrongField = new WrongFieldConstructor(123);
 			class WithWrongField extends BaseClass {
-				erroredField = wrongField
+				erroredField = wrongField;
 			}
 			new WithWrongField;
 
@@ -336,7 +397,7 @@ describe('props tests', () => {
 		// @ts-ignore
 		const inspected = util.inspect(madeFieldInstance);
 		const expected = 'MadeFieldClass { myField: [Getter/Setter] }';
-		expect(expected).toEqual(expected);
+		expect(inspected).toEqual(expected);
 	});
 
 	test('wrong assignment to objects', () => {

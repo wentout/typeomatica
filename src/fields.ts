@@ -1,6 +1,6 @@
 'use strict';
 
-import { ErrorsNames } from './errors'
+import { ErrorsNames } from './errors';
 
 const SymbolInitialValue = Symbol('Initial Value');
 
@@ -18,17 +18,17 @@ interface FieldDefinition  {
 // } as ObjectConstructor;
 
 export class FieldConstructor implements FieldDefinition {
-	[SymbolInitialValue]: unknown
+	[SymbolInitialValue]: unknown;
 	public get get () {
 		const self = this;
-		return function (this: FieldDefinition) {
+		return function (/* this: FieldDefinition */) {
 			return self[SymbolInitialValue];
-		}
+		};
 	}
 	public get set () {
 		return function () {
 			throw new TypeError(ErrorsNames.FORBIDDEN_RE);
-		}
+		};
 	}
 	constructor (value: unknown) {
 		this[SymbolInitialValue] = value;
