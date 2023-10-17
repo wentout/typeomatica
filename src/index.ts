@@ -40,7 +40,7 @@ const resolver = Object.entries({
 				const result = handler.set(replacementValue);
 				return result;
 			}
-		}
+		};
 	};
 
 	return obj;
@@ -98,13 +98,15 @@ const handlers = {
 			return result;
 		}
 		if (prop === 'toJSON') {
+			// eslint-disable-next-line no-unused-vars
 			return function (this: typeof target) {
-				return JSON.stringify(Object.entries(this).reduce((obj, [key, value]) => {
+				const entries = Object.entries(this);
+				return JSON.stringify(entries.reduce((obj, [key, value]) => {
 					// @ts-ignore
 					obj[key] = value.valueOf();
 					return obj;
 				}, {}));
-			}
+			};
 		}
 		// @ts-ignore
 		if (props2skip.has(prop)) {
@@ -125,43 +127,72 @@ const handlers = {
 // user have to precisely define all props
 const BaseTarget = Object.create(null);
 
-// const BasePrototype = new Proxy(BaseTarget, handlers);
+type Proto<P, T> = Pick<P, Exclude<keyof P, keyof T>> & T;
 
-// @ts-ignore
-const BaseConstructor = function (this: object, InstanceTarget = BaseTarget) {
+
+export const BaseConstructorPrototype = function <
+	P extends object,
+	S extends Proto<T, P>,
+	T extends {
+		(): P
+		new (): {
+			[key in keyof S]: S[key]
+		}
+	},
+>(
+	this: T,
+	InstanceTarget: P = BaseTarget
+): T {
 	if (!new.target) {
-		const self = BaseConstructor.bind(this, InstanceTarget);
+
+		const self: {
+			prototype: {
+				constructor: typeof BaseConstructorPrototype
+			}
+		} = BaseConstructorPrototype.bind(this, InstanceTarget);
+
 		self.prototype = {
-			constructor: BaseConstructor
+			constructor: BaseConstructorPrototype
 		};
-		return self;
+
+		return self as T;
+
 	}
 
 	const InstancePrototype = new Proxy(InstanceTarget, handlers);
 
-	let protoPointer = this;
+	let protoPointer = this as object;
 	let protoConstrcutor;
 	do {
 		protoPointer = Reflect.getPrototypeOf(protoPointer) as object;
 		protoConstrcutor = Reflect.getOwnPropertyDescriptor(protoPointer, 'constructor')!.value;
-	} while (protoConstrcutor !== BaseConstructor);
+	} while (protoConstrcutor !== BaseConstructorPrototype);
+
 	Reflect.setPrototypeOf(protoPointer, InstancePrototype);
+	return this;
 
-} as ObjectConstructor;
-// } as IDEF;
+};
 
-// Reflect.setPrototypeOf(BaseConstructor.prototype, BasePrototype);
+// as ObjectConstructor & {
+// 	(): void
+// 	// eslint-disable-next-line no-unused-vars
+// 	new<T>(param?: T extends object ? T : {}): {
+// 		[key in keyof T]: T[key]
+// 	}
+// };
 
 Object.defineProperty(module, 'exports', {
 	get() {
-		return BaseConstructor;
+		return BaseConstructorPrototype;
 	},
 	enumerable: true
 });
 
+
+// eslint-disable-next-line new-cap
 // @ts-ignore
-export class BaseClass extends BaseConstructor { };
-// export { FieldConstructor } from './fields';
+export class BaseClass extends BaseConstructorPrototype { }
+export { FieldConstructor } from './fields';
 
 Object.defineProperty(module.exports, 'BaseClass', {
 	get() {
@@ -175,10 +206,3 @@ Object.defineProperty(module.exports, 'FieldConstructor', {
 	},
 	enumerable: true
 });
-
-
-export type IDEF<T, P = {}, R = {}> = {
-	new(...args: unknown[]): T;
-	(this: T, ...args: unknown[]): R;
-	prototype: P;
-};

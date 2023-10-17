@@ -1,9 +1,8 @@
-declare const BaseConstructor: ObjectConstructor;
-export declare class BaseClass extends BaseConstructor {
+type Proto<P, T> = Pick<P, Exclude<keyof P, keyof T>> & T;
+export declare const BaseConstructorPrototype: <P extends object, S extends Proto<T, P>, T extends {
+    (): P;
+    new (): { [key in keyof S]: S[key]; };
+}>(this: T, InstanceTarget?: P) => T;
+export declare class BaseClass extends BaseConstructorPrototype {
 }
-export type IDEF<T, P = {}, R = {}> = {
-    new (...args: unknown[]): T;
-    (this: T, ...args: unknown[]): R;
-    prototype: P;
-};
-export {};
+export { FieldConstructor } from './fields';
