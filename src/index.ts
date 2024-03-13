@@ -194,6 +194,20 @@ Object.defineProperty(module, 'exports', {
 export class BaseClass extends BaseConstructorPrototype { }
 export { FieldConstructor } from './fields';
 
+type StrictRuntime = {
+	// eslint-disable-next-line no-unused-vars
+	<T extends object>(...args: unknown[]): T
+}
+
+// export const { StrictPrototype, Strict } = {
+export const { Strict } = {
+	// StrictPrototype: BaseConstructorPrototype,
+	Strict: BaseConstructorPrototype,
+} as {
+	// StrictPrototype: StrictRuntime
+	Strict: StrictRuntime
+};
+
 Object.defineProperty(module.exports, 'BaseClass', {
 	get() {
 		return BaseClass;
@@ -203,6 +217,18 @@ Object.defineProperty(module.exports, 'BaseClass', {
 Object.defineProperty(module.exports, 'FieldConstructor', {
 	get() {
 		return FieldConstructor;
+	},
+	enumerable: true
+});
+// Object.defineProperty(module.exports, 'StrictPrototype', {
+// 	get() {
+// 		return BaseConstructorPrototype;
+// 	},
+// 	enumerable: true
+// });
+Object.defineProperty(module.exports, 'Strict', {
+	get() {
+		return BaseConstructorPrototype;
 	},
 	enumerable: true
 });

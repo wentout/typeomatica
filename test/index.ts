@@ -6,7 +6,7 @@ import { describe, expect, test } from '@jest/globals';
 // go as you want for being meaningfull
 // or meaningless
 const BasePrototype = require('..');
-import { BaseClass, FieldConstructor } from '..';
+import { BaseClass, FieldConstructor, Strict } from '..';
 
 const { SymbolInitialValue } = FieldConstructor;
 
@@ -26,7 +26,7 @@ let decoratedSomeProp = 0;
 
 
 // eslint-disable-next-line new-cap
-@BasePrototype({ someProp: 123 })
+@Strict({ someProp: 123 })
 class DecoratedByBase {
 	someProp!: number;
 }
