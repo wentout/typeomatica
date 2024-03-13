@@ -6,3 +6,7 @@ export declare const BaseConstructorPrototype: <P extends object, S extends Prot
 export declare class BaseClass extends BaseConstructorPrototype {
 }
 export { FieldConstructor } from './fields';
+type StrictRuntime = {
+    <T extends object>(...args: unknown[]): T;
+};
+export declare const Strict: StrictRuntime;
