@@ -1,9 +1,9 @@
 {
 	"name": "typeomatica",
-	"version": "0.3.33",
+	"version": "0.3.34",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
-		"node": ">=14"
+		"node": ">=16"
 	},
 	"main": "lib/index.js",
 	"scripts": {
@@ -31,7 +31,7 @@
 	},
 	"devDependencies": {
 		"@types/jest": "^29.5.12",
-		"@types/node": "^18.19.21",
+		"@types/node": "^18.19.30",
 		"@typescript-eslint/eslint-plugin": "^6.21.0",
 		"@typescript-eslint/parser": "^6.21.0",
 		"eslint": "^8.57.0",
@@ -42,6 +42,6 @@
 		"set-value": "^4.1.0",
 		"ts-jest": "^29.1.2",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.3.3"
+		"typescript": "^5.4.4"
 	}
 }
