@@ -1,6 +1,6 @@
 {
 	"name": "typeomatica",
-	"version": "0.3.34",
+	"version": "0.3.35",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
 		"node": ">=16"
@@ -12,6 +12,7 @@
 		"lint": "npx eslint --fix --ignore-path .gitignore ./lib",
 		"test": "npx jest",
 		"test:cov": "npx jest --collectCoverage",
+    "test:addition": "npm run build && node --test --experimental-test-coverage  ./test/addition.js",
 		"debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand",
 		"debug:old": "npx --node-options=--inspect-brk jest",
 		"prepare": "husky install"
