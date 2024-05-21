@@ -1,5 +1,8 @@
 'use strict';
 
+const { describe, test } = require('node:test');
+const assert = require('node:assert').strict;
+
 const BasePrototype = require('..');
 
 // eslint-disable-next-line new-cap
@@ -20,25 +23,27 @@ const baseInstance = new Base;
 describe('props tests', () => {
 
 	test('base instance has props', () => {
-		expect(Object.keys(baseInstance)).toEqual(['numberValue', 'stringValue', 'booleanValue', 'objectValue']);
+		const realKeys = Object.keys(baseInstance);
+		const needKeys = ['numberValue', 'stringValue', 'booleanValue', 'objectValue'];
+		assert.deepEqual(realKeys, needKeys);
 	});
 
 	test('JavaScript class fields allow re-definition', () => {
 		baseInstance.numberValue = '123';
-		expect(baseInstance.numberValue).toEqual('123');
+		assert.equal(baseInstance.numberValue, '123');
 	});
 
 	test('everything the rest is the same', () => {
-		expect(baseInstance.additionalProp).toEqual(321);
-		expect(() => {
+		assert.equal(baseInstance.additionalProp, 321);
+		assert.throws(() => {
 			baseInstance.stringValue = 123;
-		}).toThrow(new TypeError('Type Mismatch'));
-		expect(() => {
+		}, new TypeError('Type Mismatch'));
+		assert.throws(() => {
 			baseInstance.booleanValue = 123;
-		}).toThrow(new TypeError('Type Mismatch'));
-		expect(() => {
+		}, new TypeError('Type Mismatch'));
+		assert.throws(() => {
 			baseInstance.objectValue = null;
-		}).toThrow(new TypeError('Type Mismatch'));
+		}, new TypeError('Type Mismatch'));
 	});
 
 });

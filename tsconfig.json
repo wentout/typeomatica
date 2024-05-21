@@ -1,10 +1,7 @@
 {
 	"compilerOptions": {
 		"module": "commonjs",
-		"target": "ES2015",
-		"lib": [
-			"ES6",
-		],
+		"target": "es6",
 		"strict": true,
 		"alwaysStrict": true,
 		"strictFunctionTypes": true,
@@ -16,7 +13,7 @@
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
 		"declaration": true,
-		"sourceMap": false,
+		"sourceMap": true,
 		"outDir": "lib",
 		"traceResolution": false,
 		"removeComments": true,

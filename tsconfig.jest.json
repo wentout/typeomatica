@@ -1,10 +1,7 @@
 {
 	"compilerOptions": {
 		"module": "commonjs",
-		"target": "ES2015",
-		"lib": [
-			"ES6",
-		],
+		"target": "es2023",
 		"strict": true,
 		"alwaysStrict": true,
 		"strictFunctionTypes": true,

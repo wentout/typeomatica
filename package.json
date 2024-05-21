@@ -1,6 +1,6 @@
 {
 	"name": "typeomatica",
-	"version": "0.3.34",
+	"version": "0.3.36",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
 		"node": ">=16"
@@ -9,9 +9,10 @@
 	"scripts": {
 		"build": "rm -rf ./lib && npx tsc --pretty",
 		"buildlint": "rm -rf ./lib && npx tsc --pretty && npm run lint",
-		"lint": "npx eslint --fix --ignore-path .gitignore ./lib",
+		"lint": "npx eslint --fix --ignore-pattern ./lib",
 		"test": "npx jest",
 		"test:cov": "npx jest --collectCoverage",
+		"test:addition": "npm run build && node --test --experimental-test-coverage  ./test/addition.js",
 		"debug": "node --inspect-brk ./node_modules/jest/bin/jest.js --runInBand",
 		"debug:old": "npx --node-options=--inspect-brk jest",
 		"prepare": "husky install"
@@ -31,7 +32,7 @@
 	},
 	"devDependencies": {
 		"@types/jest": "^29.5.12",
-		"@types/node": "^18.19.30",
+		"@types/node": "^18.19.33",
 		"@typescript-eslint/eslint-plugin": "^6.21.0",
 		"@typescript-eslint/parser": "^6.21.0",
 		"eslint": "^8.57.0",
@@ -40,8 +41,10 @@
 		"json5": "^2.2.3",
 		"lint-staged": "^13.3.0",
 		"set-value": "^4.1.0",
-		"ts-jest": "^29.1.2",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.4.4"
+		"typescript": "^5.4.5"
+	},
+	"dependencies": {
+		"ts-jest": "^29.1.3"
 	}
 }
