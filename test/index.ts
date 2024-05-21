@@ -31,6 +31,7 @@ class DecoratedByBase {
 	someProp!: number;
 }
 
+// @Strict({ someProp: 123 })
 class ExtendedDecoratedByBase extends DecoratedByBase {
 	someProp: number;
 	constructor() {
@@ -63,6 +64,7 @@ class Base extends BasePrototype({
 
 	constructor() {
 		super();
+		// debugger;
 		this.stringValue = '123';
 		this.booleanValue = true;
 		this.objectValue = {};
@@ -80,7 +82,9 @@ class Base extends BasePrototype({
 		// });
 	}
 }
+// debugger;
 const baseInstance = new Base;
+// debugger;
 
 const upperInstance = Object.create(baseInstance);
 
@@ -93,7 +97,9 @@ class SimpleBase extends BaseClass {
 	// 	this.stringProp = '123';
 	// }
 }
+// debugger;
 const simpleInstance = new SimpleBase;
+// debugger;
 
 interface IFCstr<S> {
 	(): void
@@ -227,14 +233,16 @@ describe('props tests', () => {
 	test('decorators works', () => {
 		const rgp = Reflect.getPrototypeOf;
 		// eslint-disable-next-line no-debugger
-		// debugger;
+		debugger;
 		const decorated = new DecoratedByBase;
+		debugger;
 		const exdecorated = new ExtendedDecoratedByBase;
+		debugger;
 		expect(decoratedSomeProp.valueOf()).toEqual(321);
 		expect(exdecorated.someProp.valueOf()).toEqual(321);
 		expect(decorated.someProp.valueOf()).toEqual(123);
 		const proto = rgp(decorated);
-		//@ts-ignore;
+		//@ts-expect-error;
 		expect(proto.someProp).toEqual(123);
 	});
 
@@ -274,7 +282,7 @@ describe('props tests', () => {
 
 			// eslint-disable-next-line no-debugger
 			debugger;
-			// @ts-ignore
+			// @ts-expect-error
 			simpleInstance.stringProp = 123;
 
 		}).toThrow(new TypeError('Type Mismatch'));
@@ -292,7 +300,7 @@ describe('props tests', () => {
 	test('fails boolean arithmetics', () => {
 		expect(() => {
 
-			// @ts-ignore
+			// @ts-expect-error
 			baseInstance.booleanValue + 5;
 
 		}).toThrow(new ReferenceError('Value Access Denied'));
@@ -305,13 +313,13 @@ describe('props tests', () => {
 
 		// warning!
 		// booleanValue does not rely on baseInstance anymore!
-		// @ts-ignore
+		// @ts-expect-error
 		booleanValue = new Boolean(false);
 
 		let value = baseInstance.booleanValue.valueOf();
 		expect(value).toEqual(true);
 
-		// @ts-ignore
+		// @ts-expect-error
 		baseInstance.booleanValue = new Boolean(false);
 		value = baseInstance.booleanValue.valueOf();
 		expect(value).toEqual(false);
@@ -329,7 +337,7 @@ describe('props tests', () => {
 
 	test('correct object assignment', () => {
 		baseInstance.objectValue = { a: 123 };
-		// @ts-ignore
+		// @ts-expect-error
 		expect(baseInstance.objectValue.a).toEqual(123);
 	});
 
@@ -339,7 +347,7 @@ describe('props tests', () => {
 
 	test('correct custom field assignment', () => {
 		madeFieldInstance.myField = 'replaced';
-		// @ts-ignore
+		//@ts-ignore
 		const initialValue = madeFieldInstance[SymbolInitialValue]('myField');
 		expect(initialValue).toEqual('initial value');
 		expect(secondMadeFieldInstance.myField).toEqual('replaced');
@@ -387,14 +395,13 @@ describe('props tests', () => {
 	});
 
 	test('correct custom missing prop search creation', () => {
-		// @ts-ignore
+		//@ts-ignore
 		expect(madeFieldInstance[Symbol.toStringTag]).toEqual(undefined);
-		// @ts-ignore
+		//@ts-ignore
 		expect(madeFieldInstance[Symbol.iterator]).toEqual(undefined);
 		const util = require('util');
-		// @ts-ignore
+		//@ts-ignore
 		expect(madeFieldInstance[util.inspect.custom]).toEqual(undefined);
-		// @ts-ignore
 		const inspected = util.inspect(madeFieldInstance);
 		const expected = 'MadeFieldClass { myField: [Getter/Setter] }';
 		expect(inspected).toEqual(expected);
@@ -403,7 +410,7 @@ describe('props tests', () => {
 	test('wrong assignment to objects', () => {
 
 		expect(() => {
-			// @ts-ignore
+			// @ts-expect-error
 			baseInstance.objectValue = 123;
 
 		}).toThrow(new TypeError('Type Mismatch'));
@@ -448,7 +455,7 @@ describe('props tests', () => {
 
 	test('wrong assignment', () => {
 		expect(() => {
-			// @ts-ignore
+			// @ts-expect-error
 			baseInstance.booleanValue = 123;
 
 		}).toThrow(new TypeError('Type Mismatch'));

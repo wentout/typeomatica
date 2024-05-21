@@ -1,8 +1,7 @@
-type Proto<P, T> = Pick<P, Exclude<keyof P, keyof T>> & T;
-export declare const BaseConstructorPrototype: <P extends object, S extends Proto<T, P>, T extends {
-    (): P;
-    new (): { [key in keyof S]: S[key]; };
-}>(this: T, InstanceTarget?: P) => T;
+export declare const BaseConstructorPrototype: {
+    (): void;
+    new (): unknown;
+};
 export declare class BaseClass extends BaseConstructorPrototype {
 }
 export { FieldConstructor } from './fields';

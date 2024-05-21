@@ -119,6 +119,7 @@ const handlers = {
 		return result;
 	},
 	// defineProperty(target: object, key: string, descriptor: object) {
+	// 	debugger;
 	// 	Reflect.defineProperty(target, key, descriptor);
 	// 	return true;
 	// }
@@ -135,7 +136,7 @@ export const BaseConstructorPrototype = function <
 	S extends Proto<T, P>,
 	T extends {
 		(): P
-		new (): {
+		new(): {
 			[key in keyof S]: S[key]
 		}
 	},
@@ -149,6 +150,7 @@ export const BaseConstructorPrototype = function <
 			prototype: {
 				constructor: typeof BaseConstructorPrototype
 			}
+			//@ts-ignore
 		} = BaseConstructorPrototype.bind(this, InstanceTarget);
 
 		self.prototype = {
@@ -171,7 +173,46 @@ export const BaseConstructorPrototype = function <
 	Reflect.setPrototypeOf(protoPointer, InstancePrototype);
 	return this;
 
+} as {
+	new(): unknown
+	(): void
 };
+
+// const BaseConstructorProtoProxy = new Proxy(BaseConstructorPrototype, {
+// 	construct (target: Function, argumentsList: unknown[], newTarget: Function) {
+// 		debugger;
+// 		console.log('.construct invocation');
+// 		const result = Reflect.construct(target, argumentsList, newTarget);
+// 		debugger;
+// 		return result;
+// 	},
+// 	get (target: object, prop: string | symbol, receiver: object) {
+// 		debugger;
+// 		const result = Reflect.get(target, prop, receiver);
+// 		debugger;
+// 		return result;
+// 	},
+// 	set(_: object, prop: string, value: unknown, receiver: object) {
+// 		debugger;
+// 		const result = createProperty(prop, value, receiver);
+// 		return result;
+// 	},
+// 	defineProperty(target: object, key: string, descriptor: object) {
+// 		debugger;
+// 		Reflect.defineProperty(target, key, descriptor);
+// 		return true;
+// 	},
+// 	getPrototypeOf(target: object) {
+// 		debugger;
+// 		const result = Reflect.getPrototypeOf(target);
+// 		return result;
+// 	},
+// 	setPrototypeOf(target, prototype) {
+// 		debugger;
+// 		Reflect.setPrototypeOf(target, prototype);
+// 		return true;
+// 	  },
+// });
 
 // as ObjectConstructor & {
 // 	(): void
@@ -183,12 +224,14 @@ export const BaseConstructorPrototype = function <
 
 Object.defineProperty(module, 'exports', {
 	get() {
+		// return BaseConstructorProtoProxy;
 		return BaseConstructorPrototype;
 	},
 	enumerable: true
 });
 
 
+// export class BaseClass extends BaseConstructorProtoProxy { }
 // eslint-disable-next-line new-cap
 // @ts-ignore
 export class BaseClass extends BaseConstructorPrototype { }
@@ -201,7 +244,7 @@ type StrictRuntime = {
 
 // export const { StrictPrototype, Strict } = {
 export const { Strict } = {
-	// StrictPrototype: BaseConstructorPrototype,
+	// Strict: BaseConstructorProtoProxy,
 	Strict: BaseConstructorPrototype,
 } as {
 	// StrictPrototype: StrictRuntime
@@ -220,15 +263,35 @@ Object.defineProperty(module.exports, 'FieldConstructor', {
 	},
 	enumerable: true
 });
-// Object.defineProperty(module.exports, 'StrictPrototype', {
-// 	get() {
-// 		return BaseConstructorPrototype;
-// 	},
-// 	enumerable: true
-// });
 Object.defineProperty(module.exports, 'Strict', {
 	get() {
-		return BaseConstructorPrototype;
+		return function (prototypeTarget: object) {
+			const decorator = function (
+				this: object,
+				Target: {
+					new(): unknown
+					(): void
+				},
+			) {
+				//@ts-ignore
+				const Targeted = BaseConstructorPrototype.call(Target, prototypeTarget);
+				//@ts-ignore
+				const MyProxyClass = new Proxy(Targeted, {
+					construct(target, argumentsList, newTarget) {
+						//@ts-ignore
+						const result = Reflect.construct(target, argumentsList, newTarget);
+						debugger;
+						return result;
+					},
+				});
+				return MyProxyClass;
+			};
+
+			return decorator;
+
+		};
+		// return BaseConstructorProtoProxy;
+		// return BaseConstructorPrototype;
 	},
 	enumerable: true
 });
