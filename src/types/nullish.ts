@@ -11,5 +11,5 @@ export const nullish = (value: object) => {
 			const error = new TypeError(ErrorsNames.TYPE_MISMATCH);
 			throw error;
 		}
-	}
+	};
 };

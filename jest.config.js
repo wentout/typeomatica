@@ -7,5 +7,6 @@ module.exports = {
 		'\\./test/*.ts$': ['ts-jest', {
 			tsconfig : './tsconfig.jest.json'
 		}]
-	}
+	},
+	// workerThreads: true
 };

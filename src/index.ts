@@ -86,7 +86,9 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 
 };
 
-const props2skip = new Set([Symbol.toStringTag, Symbol.iterator]);
+// line below 'href' is for util.inspect works, useful for v24
+const props2skip = new Set([Symbol.toStringTag, Symbol.iterator, 'href']);
+// const props2skip = new Set([Symbol.toStringTag, Symbol.iterator]);
 const util = require('util');
 const hasNodeInspect = (util && util.inspect && util.inspect.custom);
 hasNodeInspect && (props2skip.add(util.inspect.custom));
@@ -98,7 +100,6 @@ const handlers = {
 			return result;
 		}
 		if (prop === 'toJSON') {
-			// eslint-disable-next-line no-unused-vars
 			return function (this: typeof target) {
 				const entries = Object.entries(this);
 				return JSON.stringify(entries.reduce((obj, [key, value]) => {
@@ -108,7 +109,6 @@ const handlers = {
 				}, {}));
 			};
 		}
-		// @ts-ignore
 		if (props2skip.has(prop)) {
 			return undefined;
 		}
@@ -216,7 +216,6 @@ export const BaseConstructorPrototype = function <
 
 // as ObjectConstructor & {
 // 	(): void
-// 	// eslint-disable-next-line no-unused-vars
 // 	new<T>(param?: T extends object ? T : {}): {
 // 		[key in keyof T]: T[key]
 // 	}
@@ -232,13 +231,13 @@ Object.defineProperty(module, 'exports', {
 
 
 // export class BaseClass extends BaseConstructorProtoProxy { }
-// eslint-disable-next-line new-cap
 // @ts-ignore
 export class BaseClass extends BaseConstructorPrototype { }
+
 export { FieldConstructor } from './fields';
+export const { SymbolInitialValue } = FieldConstructor;
 
 type StrictRuntime = {
-	// eslint-disable-next-line no-unused-vars
 	<T extends object>(...args: unknown[]): T
 }
 
@@ -263,6 +262,12 @@ Object.defineProperty(module.exports, 'FieldConstructor', {
 	},
 	enumerable: true
 });
+Object.defineProperty(module.exports, 'SymbolInitialValue', {
+	get() {
+		return SymbolInitialValue;
+	},
+	enumerable: true
+});
 Object.defineProperty(module.exports, 'Strict', {
 	get() {
 		return function (prototypeTarget: object) {
@@ -280,7 +285,6 @@ Object.defineProperty(module.exports, 'Strict', {
 					construct(target, argumentsList, newTarget) {
 						//@ts-ignore
 						const result = Reflect.construct(target, argumentsList, newTarget);
-						debugger;
 						return result;
 					},
 				});
