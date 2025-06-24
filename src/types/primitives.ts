@@ -17,13 +17,13 @@ export const primitives = (initialValue: object) => {
 								throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
 							}
 							return value.valueOf();
-						}
+						};
 					}
 
 					if (prop === 'valueOf') {
 						return function () {
 							return value.valueOf();
-						}
+						};
 					}
 
 					// @ts-ignore

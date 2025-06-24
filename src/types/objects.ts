@@ -15,5 +15,5 @@ export const objects = (value: object) => {
 			const error = new TypeError(ErrorsNames.TYPE_MISMATCH);
 			throw error;
 		}
-	}
+	};
 };

@@ -1,14 +1,13 @@
 'use strict';
-
 import { describe, expect, test } from '@jest/globals';
 
 // BasePrototype & BaseClass are the same function
 // go as you want for being meaningfull
 // or meaningless
 const BasePrototype = require('..');
-import { BaseClass, FieldConstructor, Strict } from '..';
+import { BaseClass, FieldConstructor, SymbolInitialValue, Strict } from '..';
 
-const { SymbolInitialValue } = FieldConstructor;
+debugger; // eslint-disable-line no-debugger
 
 interface IBase {
 	get getterField(): string
@@ -23,7 +22,6 @@ interface IBase {
 let decoratedSomeProp = 0;
 // const s = BasePrototype({ someProp: 123 });
 // console.log(s);
-
 
 // eslint-disable-next-line new-cap
 @Strict({ someProp: 123 })
@@ -64,7 +62,6 @@ class Base extends BasePrototype({
 
 	constructor() {
 		super();
-		// debugger;
 		this.stringValue = '123';
 		this.booleanValue = true;
 		this.objectValue = {};
@@ -82,9 +79,7 @@ class Base extends BasePrototype({
 		// });
 	}
 }
-// debugger;
 const baseInstance = new Base;
-// debugger;
 
 const upperInstance = Object.create(baseInstance);
 
@@ -97,9 +92,7 @@ class SimpleBase extends BaseClass {
 	// 	this.stringProp = '123';
 	// }
 }
-// debugger;
 const simpleInstance = new SimpleBase;
-// debugger;
 
 interface IFCstr<S> {
 	(): void
@@ -232,12 +225,8 @@ describe('props tests', () => {
 
 	test('decorators works', () => {
 		const rgp = Reflect.getPrototypeOf;
-		// eslint-disable-next-line no-debugger
-		debugger;
 		const decorated = new DecoratedByBase;
-		debugger;
 		const exdecorated = new ExtendedDecoratedByBase;
-		debugger;
 		expect(decoratedSomeProp.valueOf()).toEqual(321);
 		expect(exdecorated.someProp.valueOf()).toEqual(321);
 		expect(decorated.someProp.valueOf()).toEqual(123);
@@ -279,9 +268,6 @@ describe('props tests', () => {
 
 		expect(/String$/.test(simpleInstance.stringProp.constructor.name)).toBe(true);
 		expect(() => {
-
-			// eslint-disable-next-line no-debugger
-			debugger;
 			// @ts-expect-error
 			simpleInstance.stringProp = 123;
 
