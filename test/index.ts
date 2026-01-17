@@ -4,11 +4,13 @@
 'use strict';
 import { describe, expect, test } from '@jest/globals';
 
+const ogp = Object.getPrototypeOf;
+
 // BasePrototype & BaseClass are the same function
 // go as you want for being meaningfull
 // or meaningless
 const BasePrototype = require('..');
-const { BaseClass, FieldConstructor, SymbolInitialValue, Strict, SymbolTypeomaticaProxyReference } = BasePrototype;
+const { BaseClass, FieldConstructor, SymbolInitialValue, Strict, SymbolTypeomaticaProxyReference, baseTarget } = BasePrototype;
 
 const givenTags = new Map();
 let givenTagsInvocations = 0;
@@ -435,7 +437,7 @@ describe('props tests', () => {
 		try {
 			String(madeFieldInstance);
 		} catch (_err) {
-			if (_err instanceof Error){
+			if (_err instanceof Error) {
 				errorMessage = _err.message;
 			}
 		}
@@ -732,35 +734,24 @@ describe('deep extend works', () => {
 describe('coverage: ', () => {
 	test('builtin types works', () => {
 
-		const FnEx1 = function () {};
+		const FnEx1 = function () { };
 		Object.defineProperty(FnEx1.prototype, SymbolTypeomaticaProxyReference, {
 			value: true
 		});
-		
-
 		@Strict()
 		// @ts-ignore
 		class CovCLS1 extends FnEx1 {
 			field = 123;
 		}
-
-
-
-		debugger;
 		const cov1 = new CovCLS1;
 		expect(cov1.field).toBe(123);
 
-		// debugger;
-
-		// const FnEx2 = function () {};
-		// Object.setPrototypeOf(FnEx2.prototype, Object.create(null));
 		class CovCLS2 extends BasePrototype() {
 			field = 123;
 		}
-
 		const cstr = CovCLS2.prototype.constructor;
 		Object.defineProperty(CovCLS2.prototype, 'constructor', {
-			get () {
+			get() {
 				return cstr;
 			}
 		});
@@ -773,13 +764,77 @@ describe('coverage: ', () => {
 			error = _error;
 		}
 		expect(error.message).toBe('Unable to setup TypeØmatica handler!');
+
+		const FnEx3 = function () { };
+		Object.setPrototypeOf(FnEx3.prototype, Object.create(null));
+		// @ts-ignore
+		class CovCLS3 extends FnEx3 {
+			field = 123;
+		}
+		const cov3 = new CovCLS3;
+		expect(cov3.field).toBe(123);
+
+
+
+		const hiddenValues = {
+			hidden: true
+		};
+		class CovCLS4 extends BasePrototype(hiddenValues) {
+			passed = true;
+		}
+		const cov4 = new CovCLS4;
+		expect(cov4.hidden).toBeTruthy();
+		expect(cov4.passed).toBeTruthy();
+
+		@Strict(hiddenValues)
+		class CovCLS5 { }
+		const cov5 = new CovCLS5;
+		// @ts-ignore
+		expect(cov5.hidden).toBeTruthy();
+
+		console.log(ogp(cov5));
+		debugger;
+
+		const proxyPointer = ogp(ogp(ogp(cov5)));
+
+		try {
+			Object.setPrototypeOf(proxyPointer, {});
+		} catch (_error) {
+			error = _error;
+		}
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).toBe('Setting prototype is not allowed!');
+		try {
+			Object.defineProperty(proxyPointer, 'test', {
+				value: 'test'
+			});
+		} catch (_error) {
+			error = _error;
+		}
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).toBe('Defining new Properties is not allowed!');
+		try {
+			delete proxyPointer.hidden;
+		} catch (_error) {
+			error = _error;
+		}
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).toBe('Properties Deletion is not allowed!');
+
+		// this tests we passed null
+		// as a target for proto
+		// though it anyway be converted to Object.create(null)
+
+		const target = baseTarget();
+		expect(ogp(target)).toBe(null);
+
 	});
 
 });
 
 const skip = true;
 
-describe(`check duplications, skipped ${skip}`,  () => {
+describe(`check duplications, skipped ${skip}`, () => {
 	const stack: Array<string> = [];
 	let count = 0;
 	givenTags.forEach((sequence, key) => {
@@ -798,7 +853,7 @@ describe(`check duplications, skipped ${skip}`,  () => {
 		const stackStr = stack.join('\n');
 
 		Object.defineProperty(error, 'stack', {
-			get () {
+			get() {
 				return stackStr;
 			}
 		});

@@ -14,6 +14,7 @@ import {
 } from './types';
 
 import { FieldConstructor } from './fields';
+// export { FieldConstructor };
 
 const resolver = Object.entries({
 	primitives,
@@ -132,20 +133,21 @@ const handlers = {
 		const result = createProperty(prop, value, receiver);
 		return result;
 	},
+	setPrototypeOf() {
+		throw new Error('Setting prototype is not allowed!');
+	},
 	// defineProperty(target: object, key: string, descriptor: object) {
 	defineProperty() {
-		// debugger;
-		throw new Error('defineProperty is not allowed');
+		throw new Error('Defining new Properties is not allowed!');
 		// Reflect.defineProperty(target, key, descriptor);
+	},
+	deleteProperty() {
+		throw new Error('Properties Deletion is not allowed!');
 	},
 	// getPrototypeOf() {
 	// 	debugger;
 	// 	throw new Error('Getting prototype is not allowed');
 	// },
-	setPrototypeOf() {
-		// debugger;
-		throw new Error('Setting prototype is not allowed');
-	},
 };
 
 Object.freeze(handlers);
@@ -153,7 +155,7 @@ Object.freeze(handlers);
 type Proto<P, T> = Pick<P, Exclude<keyof P, keyof T>> & T;
 
 // user have to precisely define all props
-const baseTarget = (proto: object | null = null) => {
+export const baseTarget = (proto: object | null = null) => {
 	const answer = Object.create(proto);
 	// debugger;
 	return answer;
@@ -312,8 +314,8 @@ export class BaseClass {
 		const target = baseTarget(_target) as object;
 		const proxy = getTypeomaticaProxyReference(target);
 		// oxlint-disable-next-line typescript/no-this-alias
-		let proto = this;
-		let protoPointer = Object.getPrototypeOf(this);
+		let proto: object | null = this;
+		let protoPointer: object | null;
 		let found: boolean = false;
 		do {
 			protoPointer = Object.getPrototypeOf(proto);
@@ -324,17 +326,16 @@ export class BaseClass {
 				found = true;
 				break;
 			}
-			if (protoPointer === null) {
-				found = true;
-				break;
-			}
+			/*
+			// it can be, that protoPointer === null
+			// though too hard to implement the tasts
+			*/
 			proto = protoPointer;
 		} while (!found);
 		Object.setPrototypeOf(proto, proxy);
 	}
 }
 
-export { FieldConstructor } from './fields';
 export const { SymbolInitialValue } = FieldConstructor;
 
 type StrictRuntime = {
@@ -370,6 +371,12 @@ Object.defineProperty(module.exports, 'SymbolInitialValue', {
 Object.defineProperty(module.exports, 'SymbolTypeomaticaProxyReference', {
 	get() {
 		return SymbolTypeomaticaProxyReference;
+	},
+	enumerable: true
+});
+Object.defineProperty(module.exports, 'baseTarget', {
+	get() {
+		return baseTarget;
 	},
 	enumerable: true
 });

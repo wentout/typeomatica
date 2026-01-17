@@ -6,7 +6,24 @@
 		"node": ">=16"
 	},
 	"main": "lib/index.js",
-	"scripts": {
+  "exports": {
+    ".": "./lib/index.js",
+    "./module": {
+      "import": "./lib/index.js",
+      "browser": "./lib/index.js",
+      "require": "./lib/index.js",
+      "default": "./lib/index.js"
+    }
+  },
+  "files": [
+    "README.md",
+    "LICENSE",
+    "lib"
+  ],
+  "directories": {
+    "build": "lib/"
+  },
+  "scripts": {
 		"build": "rm -rf ./lib && npx tsc --target es6 --pretty",
 		"lint:lib": "npx eslint --fix ./lib",
 		"lint:src": "npx eslint --fix ./src",
