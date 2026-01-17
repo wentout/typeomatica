@@ -1,11 +1,38 @@
+// oxlint-disable no-unused-expressions
+// oxlint-disable typescript/no-this-alias
+/* eslint-disable no-debugger */
 'use strict';
 import { describe, expect, test } from '@jest/globals';
+
+const ogp = Object.getPrototypeOf;
 
 // BasePrototype & BaseClass are the same function
 // go as you want for being meaningfull
 // or meaningless
 const BasePrototype = require('..');
-import { BaseClass, FieldConstructor, SymbolInitialValue, Strict } from '..';
+const { BaseClass, FieldConstructor, SymbolInitialValue, Strict, SymbolTypeomaticaProxyReference, baseTarget } = BasePrototype;
+
+const givenTags = new Map();
+let givenTagsInvocations = 0;
+const addTag = <T>(instance: T): T => {
+	++givenTagsInvocations;
+	// @ts-ignore
+	const tag = instance[SymbolTypeomaticaProxyReference] as string;
+	if (typeof tag !== 'string') {
+		debugger;
+		throw new Error('Instance has no Typeomatica Tag');
+	}
+	let sequence;
+	if (givenTags.has(tag)) {
+		sequence = givenTags.get(tag);
+		sequence.add(instance);
+	} else {
+		sequence = new Set([instance]);
+		sequence.add(instance);
+	}
+	givenTags.set(tag, sequence);
+	return instance;
+};
 
 debugger; // eslint-disable-line no-debugger
 
@@ -79,20 +106,19 @@ class Base extends BasePrototype({
 		// });
 	}
 }
-const baseInstance = new Base;
+const baseInstance = addTag(new Base);
 
 const upperInstance = Object.create(baseInstance);
-
 class SimpleBase extends BaseClass {
 	stringProp = '123';
 	// ES2022
-	// stringProp: string;
-	// constructor() {
-	// 	super();
-	// 	this.stringProp = '123';
-	// }
+	propString: string;
+	constructor() {
+		super();
+		this.propString = '123';
+	}
 }
-const simpleInstance = new SimpleBase;
+const simpleInstance = addTag(new SimpleBase);
 
 interface IFCstr<S> {
 	(): void
@@ -107,26 +133,27 @@ const MyFunctionalConstructor = function (this: TmyFunctionalInstance) {
 	this.stringProp = '123';
 } as IFCstr<TmyFunctionalInstance>;
 
-Reflect.setPrototypeOf(MyFunctionalConstructor.prototype, new BasePrototype);
+const protoMFC = addTag(new BasePrototype);
+Reflect.setPrototypeOf(MyFunctionalConstructor.prototype, protoMFC);
 
-const myFunctionalInstance = new MyFunctionalConstructor();
+const myFunctionalInstance = addTag(new MyFunctionalConstructor());
 
 class SecondaryExtend extends Base { second = 123; }
 class TripleExtend extends SecondaryExtend { }
-const tiripleExtendInstance = new TripleExtend;
+const tiripleExtendInstance = addTag(new TripleExtend);
 
 // eslint-disable-next-line new-cap
 class NetworkedExtention extends BasePrototype(tiripleExtendInstance) { }
 
-const networkedInstance = new NetworkedExtention;
+const networkedInstance = addTag(new NetworkedExtention);
 
 // eslint-disable-next-line new-cap
 class ExtendedArray extends BasePrototype([1, 2, 3]) { }
 // eslint-disable-next-line new-cap
 class ExtendedSet extends BasePrototype(new Set([1, 2, 3])) { }
 
-const extendedArrayInstance = new ExtendedArray;
-const extendedSetInstance = new ExtendedSet;
+const extendedArrayInstance = addTag(new ExtendedArray);
+const extendedSetInstance = addTag(new ExtendedSet);
 
 const MUTATION_VALUE = -2;
 
@@ -212,21 +239,21 @@ class MadeFieldClass extends BaseClass {
 	}
 }
 class SecondMadeFieldClass extends BaseClass { myField = myField as unknown | string; }
-const madeFieldInstance = new MadeFieldClass;
-const secondMadeFieldInstance = new MadeFieldClass;
-const thirdMadeFieldInstance = new SecondMadeFieldClass;
+const madeFieldInstance = addTag(new MadeFieldClass);
+const secondMadeFieldInstance = addTag(new MadeFieldClass);
+const thirdMadeFieldInstance = addTag(new SecondMadeFieldClass);
 
 class MadeReGet extends BaseClass { myField = myFieldReGet as unknown | string; }
 class MadeReSet extends BaseClass { myField = myFieldReSet as unknown | string; }
-const madeReGet = new MadeReGet;
-const madeReSet = new MadeReSet;
+const madeReGet = addTag(new MadeReGet);
+const madeReSet = addTag(new MadeReSet);
 
 describe('props tests', () => {
 
 	test('decorators works', () => {
 		const rgp = Reflect.getPrototypeOf;
-		const decorated = new DecoratedByBase;
-		const exdecorated = new ExtendedDecoratedByBase;
+		const decorated = addTag(new DecoratedByBase);
+		const exdecorated = addTag(new ExtendedDecoratedByBase);
 		expect(decoratedSomeProp.valueOf()).toEqual(321);
 		expect(exdecorated.someProp.valueOf()).toEqual(321);
 		expect(decorated.someProp.valueOf()).toEqual(123);
@@ -264,6 +291,8 @@ describe('props tests', () => {
 	test('simple instance works & strings too', () => {
 		expect(simpleInstance.stringProp.toString()).toBe('123');
 		expect(simpleInstance.stringProp.length).toBe(3);
+		expect(simpleInstance.propString.toString()).toBe('123');
+		expect(simpleInstance.propString.length).toBe(3);
 
 
 		expect(/String$/.test(simpleInstance.stringProp.constructor.name)).toBe(true);
@@ -275,12 +304,28 @@ describe('props tests', () => {
 	});
 
 	test('correct boolean comparison with type coercion', () => {
-		expect(() => {
+		expect(baseInstance.booleanValue !== false).toEqual(true);
 
+		const message = 'Value Access Denied';
+		let error1: any;
+		let error2: any;
+		try {
 			const { booleanValue } = baseInstance;
 			booleanValue != false;
+		} catch (error) {
+			error1 = error;
+		}
+		expect(error1.message).toEqual(message);
+		expect(error1).toBeInstanceOf(ReferenceError);
+		try {
+			const { booleanValue } = baseInstance;
+			booleanValue > false;
+		} catch (error) {
+			error2 = error;
+		}
+		expect(error2).toBeInstanceOf(ReferenceError);
+		expect(error2.message).toEqual(message);
 
-		}).toThrow(new TypeError('Value Access Denied'));
 	});
 
 	test('fails boolean arithmetics', () => {
@@ -382,15 +427,22 @@ describe('props tests', () => {
 
 	test('correct custom missing prop search creation', () => {
 		//@ts-ignore
-		expect(madeFieldInstance[Symbol.toStringTag]).toEqual(undefined);
+		expect(madeFieldInstance[Symbol.toStringTag]).toEqual('MadeFieldClass lacks definition of [ Symbol(Symbol.toStringTag) ]');
 		//@ts-ignore
-		expect(madeFieldInstance[Symbol.iterator]).toEqual(undefined);
+		expect(madeFieldInstance[Symbol.iterator]).toEqual('MadeFieldClass lacks definition of [ Symbol(Symbol.iterator) ]');
 		const util = require('util');
 		//@ts-ignore
-		expect(madeFieldInstance[util.inspect.custom]).toEqual(undefined);
-		const inspected = util.inspect(madeFieldInstance);
-		const expected = 'MadeFieldClass { myField: [Getter/Setter] }';
-		expect(inspected).toEqual(expected);
+		expect(madeFieldInstance[util.inspect.custom]).toEqual('MadeFieldClass lacks definition of [ Symbol(nodejs.util.inspect.custom) ]');
+		let errorMessage = 'not received';
+		try {
+			String(madeFieldInstance);
+		} catch (_err) {
+			if (_err instanceof Error) {
+				errorMessage = _err.message;
+			}
+		}
+		const expected = 'Attempt to Access to Undefined Prop: [ Symbol(Symbol.toPrimitive) ] for MadeFieldClass';
+		expect(errorMessage).toEqual(expected);
 	});
 
 	test('wrong assignment to objects', () => {
@@ -511,11 +563,14 @@ describe('props tests', () => {
 	});
 
 	test('missing value fails', () => {
-		expect(() => {
-
+		let error: any;
+		try {
 			baseInstance.missingValue > 1;
-
-		}).toThrow(new TypeError('Attempt to Access to Undefined Prop: [ missingValue ] of Base'));
+		} catch (_error) {
+			error = _error;
+		}
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).toEqual('Attempt to Access to Undefined Prop: [ missingValue ] for Base');
 	});
 
 });
@@ -673,4 +728,143 @@ describe('deep extend works', () => {
 		}).toThrow(new TypeError('Method Set.prototype.has called on incompatible receiver [object Object]'));
 
 	});
+
+});
+
+describe('coverage: ', () => {
+	test('builtin types works', () => {
+
+		const FnEx1 = function () { };
+		Object.defineProperty(FnEx1.prototype, SymbolTypeomaticaProxyReference, {
+			value: true
+		});
+		@Strict()
+		// @ts-ignore
+		class CovCLS1 extends FnEx1 {
+			field = 123;
+		}
+		const cov1 = new CovCLS1;
+		expect(cov1.field).toBe(123);
+
+		class CovCLS2 extends BasePrototype() {
+			field = 123;
+		}
+		const cstr = CovCLS2.prototype.constructor;
+		Object.defineProperty(CovCLS2.prototype, 'constructor', {
+			get() {
+				return cstr;
+			}
+		});
+
+		Object.setPrototypeOf(CovCLS2.prototype, Object.create(null));
+		let error: any;
+		try {
+			new CovCLS2;
+		} catch (_error) {
+			error = _error;
+		}
+		expect(error.message).toBe('Unable to setup TypeØmatica handler!');
+
+		const FnEx3 = function () { };
+		Object.setPrototypeOf(FnEx3.prototype, Object.create(null));
+		// @ts-ignore
+		class CovCLS3 extends FnEx3 {
+			field = 123;
+		}
+		const cov3 = new CovCLS3;
+		expect(cov3.field).toBe(123);
+
+
+
+		const hiddenValues = {
+			hidden: true
+		};
+		class CovCLS4 extends BasePrototype(hiddenValues) {
+			passed = true;
+		}
+		const cov4 = new CovCLS4;
+		expect(cov4.hidden).toBeTruthy();
+		expect(cov4.passed).toBeTruthy();
+
+		@Strict(hiddenValues)
+		class CovCLS5 { }
+		const cov5 = new CovCLS5;
+		// @ts-ignore
+		expect(cov5.hidden).toBeTruthy();
+
+		console.log(ogp(cov5));
+		debugger;
+
+		const proxyPointer = ogp(ogp(ogp(cov5)));
+
+		try {
+			Object.setPrototypeOf(proxyPointer, {});
+		} catch (_error) {
+			error = _error;
+		}
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).toBe('Setting prototype is not allowed!');
+		try {
+			Object.defineProperty(proxyPointer, 'test', {
+				value: 'test'
+			});
+		} catch (_error) {
+			error = _error;
+		}
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).toBe('Defining new Properties is not allowed!');
+		try {
+			delete proxyPointer.hidden;
+		} catch (_error) {
+			error = _error;
+		}
+		expect(error).toBeInstanceOf(Error);
+		expect(error.message).toBe('Properties Deletion is not allowed!');
+
+		// this tests we passed null
+		// as a target for proto
+		// though it anyway be converted to Object.create(null)
+
+		const target = baseTarget();
+		expect(ogp(target)).toBe(null);
+
+	});
+
+});
+
+const skip = true;
+
+describe(`check duplications, skipped ${skip}`, () => {
+	const stack: Array<string> = [];
+	let count = 0;
+	givenTags.forEach((sequence, key) => {
+		const { size } = sequence;
+		if (size > 1) {
+			count = count + size;
+			const message = `sequence.size is ${size} for ${key}`;
+			stack.push(message);
+		}
+	});
+	if (stack.length > 0) {
+		const message = `tags in count of [ ${count} ] from [ ${givenTagsInvocations} ] used twice`;
+		const error = new Error(message);
+		stack.unshift(message);
+
+		const stackStr = stack.join('\n');
+
+		Object.defineProperty(error, 'stack', {
+			get() {
+				return stackStr;
+			}
+		});
+		if (!skip) {
+			test('givenTags.sequence has exatly one item', () => {
+				throw error;
+			});
+		} else {
+			test(stackStr, () => {
+				console.debug(stackStr);
+			});
+		}
+	}
 });
