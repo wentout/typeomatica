@@ -5,36 +5,28 @@
 		"strict": true,
 		"alwaysStrict": true,
 
-		"esModuleInterop": false,
-		"allowSyntheticDefaultImports": false,
-
 		"declaration": true,
 		"diagnostics": true,
-		"experimentalDecorators": true,
+
 		"extendedDiagnostics": true,
 		"forceConsistentCasingInFileNames": true,
-		"inlineSourceMap": true,
-		"inlineSources": true,
-
-		"isolatedModules": true,
-		
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitReturns": true,
 		"noImplicitThis": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"outDir": "lib",
 		"removeComments": true,
 		"strictFunctionTypes": true,
-		"strictNullChecks": true,
 		"traceResolution": false,
-		"types": ["node"]
+		"types": [ "node" ],
+
+		"outDir": "lib"
 	},
 	"include": [
 		"./src/**/*.ts",
 	],
 	"exclude": [
 		"./lib/**/*",
-		"./coverage/**/*",
+		"./coverage/**/*"
 	]
 }

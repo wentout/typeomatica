@@ -24,12 +24,12 @@
 		"build": "lib/"
 	},
 	"scripts": {
-		"build": "rm -rf ./lib && npx tsc --target es6 --pretty",
+		"build": "rm -rf ./lib && npx tsc --target esnext --pretty",
 		"lint:lib": "npx eslint --fix ./lib",
 		"lint:src": "npx eslint --fix ./src",
 		"test": "npx jest",
 		"test:cov": "npx jest --collectCoverage",
-		"test:addition": "npm run build && node --test --experimental-test-coverage  ./test/addition.js",
+		"test:addition": "node --test --experimental-test-coverage  ./test/noJest.ts",
 		"debug:on-issues": "echo 'if debugger; command is not working try other Node.JS version'",
 		"debug": "node --inspect-brk --nolazy node_modules/.bin/jest --runInBand --detectOpenHandles",
 		"debug:jest": "node --nolazy --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --colors --verbose",
