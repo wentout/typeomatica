@@ -15,12 +15,6 @@ import {
 
 import { FieldConstructor } from './fields';
 
-// type Proto<P, T> = Pick<P, Exclude<keyof P, keyof T>> & T;
-// type FlatProto<P, T, S = Proto<P, T>> = {
-// 	[key in keyof S]: S[key]
-// }
-
-
 const resolver = Object.entries({
 	primitives,
 	special,
@@ -158,7 +152,8 @@ const handlers = {
 Object.freeze(handlers);
 
 // user have to precisely define all props
-export const baseTarget = (proto: object | null = null) => {
+export const baseTarget = (_proto?: object) => {
+	const proto = typeof _proto === 'object' ? _proto : null;
 	const answer = Object.create(proto);
 	return answer;
 };
@@ -177,28 +172,7 @@ const getTypeomaticaProxyReference = (_target: object) => {
 };
 
 
-export const BaseConstructorPrototype = function <
-	T extends object,
-	M extends {
-		[SymbolTypeomaticaProxyReference]: number
-	},
-	K extends {
-		[key in keyof T]: T[key]
-	},
-	S extends {
-		(): void
-		new(): K
-	},
-	L extends M & T,
-	O extends {},
-	R extends {
-		(): S
-		new(): T extends L ? L : T | {}
-	}
->(
-	this: O extends M ? M : O,
-	_target: T | null = null
-): M extends M ? M : R {
+export const BaseConstructorPrototype = function <T extends object, S extends T>(this: S extends T ? S : {}, _target?: T ): T {
 	if (!new.target) {
 
 		const self: {
@@ -263,8 +237,8 @@ export const BaseConstructorPrototype = function <
 	return this;
 
 } as {
-	new(): unknown
-	(): void
+	new<T extends object | {}>(_target?: T): T
+	<T extends object | {}, S extends T>(_target?: S extends infer S ? S : {}): S
 };
 
 Object.defineProperty(module, 'exports', {
@@ -274,8 +248,8 @@ Object.defineProperty(module, 'exports', {
 	enumerable: true
 });
 
-export class BaseClass<T extends object, S extends T> {
-	constructor(_target: S extends T ? S : never) {
+export class BaseClass {
+	constructor(_target?: object) {
 		// @ts-ignore
 		if (this[SymbolTypeomaticaProxyReference]) {
 			return this;
@@ -305,37 +279,23 @@ export class BaseClass<T extends object, S extends T> {
 	}
 }
 
-interface ITypeDefinition<T> {
-	new(): T,
-	(): void
-}
 
-// interface IType<T, P> extends ITypeDefinition<T> {
-// 	new(...args: unknown[]): FlatProto<P, T>
-// }
-
-
-const strict = function <P extends object>(_target: P | null = null) {
-	const decorator = function <
-		T extends ITypeDefinition<T>,
-		// S extends { [key in keyof P]: P[key] },
-		// R extends IType<S, T>,
-		M extends P & InstanceType<T>,
-		IR extends { [key in keyof M]: M[key] }
-	>(cstr: T): IR {
+const strict = function (_target?: object) {
+	const decorator = function<T>(cstr: T): T {
 
 		// @ts-ignore
 		if (cstr.prototype[SymbolTypeomaticaProxyReference]) {
-			return cstr as unknown as IR;
+			return cstr;
 		}
 
 		const target = baseTarget(_target);
 		const proxy = getTypeomaticaProxyReference(target);
 		const _replacer = Object.create(proxy);
 
+		// @ts-ignore
 		Object.setPrototypeOf(cstr.prototype, _replacer);
 
-		return cstr as unknown as IR;
+		return cstr;
 
 
 		// const MyClassProxy = new Proxy(cstr, {

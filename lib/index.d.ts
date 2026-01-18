@@ -1,16 +1,11 @@
-export declare const baseTarget: (proto?: object | null) => any;
+export declare const baseTarget: (_proto?: object) => any;
 export declare const SymbolTypeomaticaProxyReference: unique symbol;
 export declare const BaseConstructorPrototype: {
-    new (): unknown;
-    (): void;
+    new <T extends object | {}>(_target?: T): T;
+    <T extends object | {}, S extends T>(_target?: S extends infer S_1 ? S_1 : {}): S;
 };
-export declare class BaseClass<T extends object, S extends T> {
-    constructor(_target: S extends T ? S : never);
-}
-interface ITypeDefinition<T> {
-    new (): T;
-    (): void;
+export declare class BaseClass {
+    constructor(_target?: object);
 }
 export declare const SymbolInitialValue: symbol;
-export declare const Strict: <P extends object>(_target?: P | null) => <T extends ITypeDefinition<T>, M extends P & InstanceType<T>, IR extends { [key in keyof M]: M[key]; }>(cstr: T) => IR;
-export {};
+export declare const Strict: (_target?: object) => <T>(cstr: T) => T;
