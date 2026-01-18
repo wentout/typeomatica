@@ -14,7 +14,12 @@ import {
 } from './types';
 
 import { FieldConstructor } from './fields';
-// export { FieldConstructor };
+
+// type Proto<P, T> = Pick<P, Exclude<keyof P, keyof T>> & T;
+// type FlatProto<P, T, S = Proto<P, T>> = {
+// 	[key in keyof S]: S[key]
+// }
+
 
 const resolver = Object.entries({
 	primitives,
@@ -62,7 +67,7 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 	 * 	or other non constructible type
 	 */
 
-	const type = valueIsPrimitive ? 'primitives' : (
+	const types = valueIsPrimitive ? 'primitives' : (
 		isObject ? (
 			isNull ? 'nullish' : 'objects'
 		) : (
@@ -76,7 +81,7 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 		{
 			enumerable: true,
 			// @ts-ignore
-			...resolver[type](value, receiver),
+			...resolver[types](value, receiver),
 		};
 
 	// if (value instanceof FieldConstructor) {
@@ -152,12 +157,9 @@ const handlers = {
 
 Object.freeze(handlers);
 
-type Proto<P, T> = Pick<P, Exclude<keyof P, keyof T>> & T;
-
 // user have to precisely define all props
 export const baseTarget = (proto: object | null = null) => {
 	const answer = Object.create(proto);
-	// debugger;
 	return answer;
 };
 
@@ -176,18 +178,27 @@ const getTypeomaticaProxyReference = (_target: object) => {
 
 
 export const BaseConstructorPrototype = function <
-	P extends object,
-	S extends Proto<T, P>,
-	T extends {
-		(): P
-		new(): {
-			[key in keyof S]: S[key]
-		}
+	T extends object,
+	M extends {
+		[SymbolTypeomaticaProxyReference]: number
 	},
+	K extends {
+		[key in keyof T]: T[key]
+	},
+	S extends {
+		(): void
+		new(): K
+	},
+	L extends M & T,
+	O extends {},
+	R extends {
+		(): S
+		new(): T extends L ? L : T | {}
+	}
 >(
-	this: T,
-	_target: P | null = null
-): T {
+	this: O extends M ? M : O,
+	_target: T | null = null
+): M extends M ? M : R {
 	if (!new.target) {
 
 		const self: {
@@ -201,12 +212,14 @@ export const BaseConstructorPrototype = function <
 			constructor: BaseConstructorPrototype
 		};
 
-		return self as T;
+		// @ts-ignore
+		return self;
 
 	}
 
 	// @ts-ignore
 	if (this[SymbolTypeomaticaProxyReference]) {
+		// @ts-ignore
 		return this;
 	}
 
@@ -246,6 +259,7 @@ export const BaseConstructorPrototype = function <
 	}
 
 	Object.setPrototypeOf(proto, InstancePrototype);
+	// @ts-ignore
 	return this;
 
 } as {
@@ -253,59 +267,15 @@ export const BaseConstructorPrototype = function <
 	(): void
 };
 
-// const BaseConstructorProtoProxy = new Proxy(BaseConstructorPrototype, {
-// 	construct (target: Function, argumentsList: unknown[], newTarget: Function) {
-// 		debugger;
-// 		console.log('.construct invocation');
-// 		const result = Reflect.construct(target, argumentsList, newTarget);
-// 		debugger;
-// 		return result;
-// 	},
-// 	get (target: object, prop: string | symbol, receiver: object) {
-// 		debugger;
-// 		const result = Reflect.get(target, prop, receiver);
-// 		debugger;
-// 		return result;
-// 	},
-// 	set(_: object, prop: string, value: unknown, receiver: object) {
-// 		debugger;
-// 		const result = createProperty(prop, value, receiver);
-// 		return result;
-// 	},
-// 	defineProperty(target: object, key: string, descriptor: object) {
-// 		debugger;
-// 		Reflect.defineProperty(target, key, descriptor);
-// 		return true;
-// 	},
-// 	getPrototypeOf(target: object) {
-// 		debugger;
-// 		const result = Reflect.getPrototypeOf(target);
-// 		return result;
-// 	},
-// 	setPrototypeOf(target, prototype) {
-// 		debugger;
-// 		Reflect.setPrototypeOf(target, prototype);
-// 		return true;
-// 	  },
-// });
-
-// as ObjectConstructor & {
-// 	(): void
-// 	new<T>(param?: T extends object ? T : {}): {
-// 		[key in keyof T]: T[key]
-// 	}
-// };
-
 Object.defineProperty(module, 'exports', {
 	get() {
-		// return BaseConstructorProtoProxy;
 		return BaseConstructorPrototype;
 	},
 	enumerable: true
 });
 
-export class BaseClass {
-	constructor(_target: object | null = null) {
+export class BaseClass<T extends object, S extends T> {
+	constructor(_target: S extends T ? S : never) {
 		// @ts-ignore
 		if (this[SymbolTypeomaticaProxyReference]) {
 			return this;
@@ -313,7 +283,6 @@ export class BaseClass {
 
 		const target = baseTarget(_target) as object;
 		const proxy = getTypeomaticaProxyReference(target);
-		// oxlint-disable-next-line typescript/no-this-alias
 		let proto: object | null = this;
 		let protoPointer: object | null;
 		let found: boolean = false;
@@ -328,7 +297,7 @@ export class BaseClass {
 			}
 			/*
 			// it can be, that protoPointer === null
-			// though too hard to implement the tasts
+			// though too hard to implement this test
 			*/
 			proto = protoPointer;
 		} while (!found);
@@ -336,19 +305,78 @@ export class BaseClass {
 	}
 }
 
-export const { SymbolInitialValue } = FieldConstructor;
-
-type StrictRuntime = {
-	// eslint-disable-next-line no-unused-vars
-	<T extends object>(target: object): T
+interface ITypeDefinition<T> {
+	new(): T,
+	(): void
 }
 
-export const { Strict } = {
-	Strict: BaseConstructorPrototype,
-} as {
-	// StrictPrototype: StrictRuntime
-	Strict: StrictRuntime
+// interface IType<T, P> extends ITypeDefinition<T> {
+// 	new(...args: unknown[]): FlatProto<P, T>
+// }
+
+
+const strict = function <P extends object>(_target: P | null = null) {
+	const decorator = function <
+		T extends ITypeDefinition<T>,
+		// S extends { [key in keyof P]: P[key] },
+		// R extends IType<S, T>,
+		M extends P & InstanceType<T>,
+		IR extends { [key in keyof M]: M[key] }
+	>(cstr: T): IR {
+
+		// @ts-ignore
+		if (cstr.prototype[SymbolTypeomaticaProxyReference]) {
+			return cstr as unknown as IR;
+		}
+
+		const target = baseTarget(_target);
+		const proxy = getTypeomaticaProxyReference(target);
+		const _replacer = Object.create(proxy);
+
+		Object.setPrototypeOf(cstr.prototype, _replacer);
+
+		return cstr as unknown as IR;
+
+
+		// const MyClassProxy = new Proxy(cstr, {
+		// 	construct(_, argumentsList, newTarget) {
+		// 		debugger;
+		// 		const target = baseTarget(_target);
+		// 		const proxy = getTypeomaticaProxyReference(target);
+		// 		const _replacer = Object.create(proxy);
+
+		// 		const _proto = cstr.prototype;
+
+		// 		const proto = Object.create(Object.getPrototypeOf(_proto));
+		// 		proto.iAmProto = true;
+
+		// 		Object.setPrototypeOf(cstr.prototype, proto);
+
+		// 		const descriptors = Object.getOwnPropertyDescriptors(_proto);
+		// 		Object.defineProperties(proto, descriptors);
+
+		// 		const replacer = Object.create(_replacer);
+		// 		Object.setPrototypeOf(proto, replacer);
+
+
+		// 		Object.setPrototypeOf(cstr.prototype, proto);
+		// 		const result = Reflect.construct(cstr, argumentsList, newTarget);
+
+		// 		debugger;
+		// 		Object.setPrototypeOf(cstr.prototype, _proto);
+		// 		debugger;
+
+		// 		return result;
+		// 	},
+		// });
+		// return MyClassProxy;
+	};
+
+	return decorator;
+
 };
+export const { SymbolInitialValue } = FieldConstructor;
+export const Strict = strict;
 
 Object.defineProperty(module.exports, 'BaseClass', {
 	get() {
@@ -382,61 +410,7 @@ Object.defineProperty(module.exports, 'baseTarget', {
 });
 Object.defineProperty(module.exports, 'Strict', {
 	get() {
-		return function (_target: object | null = null) {
-			const decorator = function <T extends { new(): unknown, (): void }>(cstr: T): T {
-				debugger;
-
-				// @ts-ignore
-				if (cstr.prototype[SymbolTypeomaticaProxyReference]) {
-					return cstr;
-				}
-
-				const target = baseTarget(_target);
-				const proxy = getTypeomaticaProxyReference(target);
-				const _replacer = Object.create(proxy);
-
-				Object.setPrototypeOf(cstr.prototype, _replacer);
-
-				return cstr;
-
-
-				// const MyClassProxy = new Proxy(cstr, {
-				// 	construct(_, argumentsList, newTarget) {
-				// 		debugger;
-				// 		const target = baseTarget(_target);
-				// 		const proxy = getTypeomaticaProxyReference(target);
-				// 		const _replacer = Object.create(proxy);
-
-				// 		const _proto = cstr.prototype;
-
-				// 		const proto = Object.create(Object.getPrototypeOf(_proto));
-				// 		proto.iAmProto = true;
-
-				// 		Object.setPrototypeOf(cstr.prototype, proto);
-
-				// 		const descriptors = Object.getOwnPropertyDescriptors(_proto);
-				// 		Object.defineProperties(proto, descriptors);
-
-				// 		const replacer = Object.create(_replacer);
-				// 		Object.setPrototypeOf(proto, replacer);
-
-
-				// 		Object.setPrototypeOf(cstr.prototype, proto);
-				// 		const result = Reflect.construct(cstr, argumentsList, newTarget);
-
-				// 		debugger;
-				// 		Object.setPrototypeOf(cstr.prototype, _proto);
-				// 		debugger;
-
-				// 		return result;
-				// 	},
-				// });
-				// return MyClassProxy;
-			};
-
-			return decorator;
-
-		};
+		return strict;
 	},
 	enumerable: true
 });

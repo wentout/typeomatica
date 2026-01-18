@@ -1,29 +1,29 @@
 {
 	"name": "typeomatica",
-	"version": "0.3.4",
+	"version": "0.3.5",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
 		"node": ">=16"
 	},
 	"main": "lib/index.js",
-  "exports": {
-    ".": "./lib/index.js",
-    "./module": {
-      "import": "./lib/index.js",
-      "browser": "./lib/index.js",
-      "require": "./lib/index.js",
-      "default": "./lib/index.js"
-    }
-  },
-  "files": [
-    "README.md",
-    "LICENSE",
-    "lib"
-  ],
-  "directories": {
-    "build": "lib/"
-  },
-  "scripts": {
+	"exports": {
+		".": "./lib/index.js",
+		"./module": {
+			"import": "./lib/index.js",
+			"browser": "./lib/index.js",
+			"require": "./lib/index.js",
+			"default": "./lib/index.js"
+		}
+	},
+	"files": [
+		"README.md",
+		"LICENSE",
+		"lib"
+	],
+	"directories": {
+		"build": "lib/"
+	},
+	"scripts": {
 		"build": "rm -rf ./lib && npx tsc --target es6 --pretty",
 		"lint:lib": "npx eslint --fix ./lib",
 		"lint:src": "npx eslint --fix ./src",
@@ -50,6 +50,8 @@
 		"url": "git+https://github.com/wentout/typeomatica.git"
 	},
 	"devDependencies": {
+		"@eslint/eslintrc": "^3.3.3",
+		"@eslint/js": "^9.39.2",
 		"@types/jest": "^30.0.0",
 		"@types/node": "^25.0.9",
 		"@typescript-eslint/eslint-plugin": "^8.53.0",
@@ -62,7 +64,6 @@
 		"lint-staged": "^16.2.7",
 		"set-value": "^4.1.0",
 		"ts-jest": "^29.4.6",
-		"ts-node": "^10.9.2",
 		"typescript": "^5.9.3"
 	}
 }

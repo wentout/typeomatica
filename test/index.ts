@@ -738,6 +738,8 @@ describe('coverage: ', () => {
 		Object.defineProperty(FnEx1.prototype, SymbolTypeomaticaProxyReference, {
 			value: true
 		});
+		
+		// test Strict having no Target argument passed
 		@Strict()
 		// @ts-ignore
 		class CovCLS1 extends FnEx1 {
@@ -779,6 +781,7 @@ describe('coverage: ', () => {
 		const hiddenValues = {
 			hidden: true
 		};
+
 		class CovCLS4 extends BasePrototype(hiddenValues) {
 			passed = true;
 		}
@@ -787,7 +790,9 @@ describe('coverage: ', () => {
 		expect(cov4.passed).toBeTruthy();
 
 		@Strict(hiddenValues)
-		class CovCLS5 { }
+		class CovCLS5 {
+			starter = 5;
+		}
 		const cov5 = new CovCLS5;
 		// @ts-ignore
 		expect(cov5.hidden).toBeTruthy();
