@@ -48,7 +48,7 @@ module.exports = {
 		'no-multi-assign': 'warn',
 		'no-lonely-if': 'warn',
 		'newline-per-chained-call': 'warn',
-		'new-cap': 'warn',
+		'new-cap': 'off',
 		'func-name-matching': 'error',
 		// 'consistent-this' : 'error',
 		'line-comment-position': [
