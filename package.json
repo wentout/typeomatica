@@ -1,6 +1,6 @@
 {
 	"name": "typeomatica",
-	"version": "0.3.5",
+	"version": "0.3.55",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
 		"node": ">=16"

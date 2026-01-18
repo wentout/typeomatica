@@ -1,6 +1,7 @@
 // oxlint-disable no-unused-expressions
 // oxlint-disable typescript/no-this-alias
 /* eslint-disable no-debugger */
+
 'use strict';
 import { describe, expect, test } from '@jest/globals';
 
@@ -789,6 +790,7 @@ describe('coverage: ', () => {
 		expect(cov4.hidden).toBeTruthy();
 		expect(cov4.passed).toBeTruthy();
 
+		
 		@Strict(hiddenValues)
 		class CovCLS5 {
 			starter = 5;
