@@ -15,40 +15,48 @@ import {
 
 import { FieldConstructor } from './fields';
 
-const resolver = Object.entries({
-	primitives,
-	special,
-	nullish,
-	objects,
-	functions
-}).reduce((obj: object, [key, _handler]) => {
-	// @ts-ignore
-	obj[key] = function (initialValue: object, receiver: object) {
-		const handler = _handler(initialValue);
-		return {
-			get() {
-				const invocationThis = this;
-				if (invocationThis !== receiver) {
-					throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
+export interface TypeomaticaOptions {
+	strictAccessCheck?: boolean;
+}
+
+const createResolver = (options: TypeomaticaOptions = {}) => {
+	const { strictAccessCheck = false } = options;
+	
+	return Object.entries({
+		primitives,
+		special,
+		nullish,
+		objects,
+		functions
+	}).reduce((obj: object, [key, _handler]) => {
+		// @ts-ignore
+		obj[key] = function (initialValue: object, receiver: object) {
+			const handler = _handler(initialValue);
+			return {
+				get() {
+					const invocationThis = this;
+					if (strictAccessCheck && invocationThis !== receiver) {
+						throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
+					}
+					const result = handler.get();
+					return result;
+				},
+				set(replacementValue: unknown) {
+					const invocationThis = this;
+					if (strictAccessCheck && invocationThis !== receiver) {
+						throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
+					}
+					const result = handler.set(replacementValue);
+					return result;
 				}
-				const result = handler.get();
-				return result;
-			},
-			set(replacementValue: unknown) {
-				const invocationThis = this;
-				if (invocationThis !== receiver) {
-					throw new ReferenceError(ErrorsNames.ACCESS_DENIED);
-				}
-				const result = handler.set(replacementValue);
-				return result;
-			}
+			};
 		};
-	};
 
-	return obj;
-}, {});
+		return obj;
+	}, {});
+};
 
-const createProperty = (propName: string, initialValue: unknown, receiver: object) => {
+const createProperty = (propName: string, initialValue: unknown, receiver: object, options?: TypeomaticaOptions) => {
 
 	const value = initialValue;
 	const valueIsPrimitive = isPrimitive(initialValue);
@@ -68,6 +76,8 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 			isFunction ? 'functions' : 'special'
 		)
 	);
+
+	const resolver = createResolver(options);
 
 	const descriptor = (isObject && (value instanceof FieldConstructor)) ?
 		value
@@ -103,7 +113,7 @@ const hasNodeInspect = (util && util.inspect && util.inspect.custom);
 // oxlint-disable-next-line no-unused-expressions
 (hasNodeInspect && (props2skip.add(util.inspect.custom)));
 
-const handlers = {
+const createHandlers = (options?: TypeomaticaOptions) => ({
 	get(target: object, prop: string | symbol, receiver: object) {
 		const result = Reflect.get(target, prop, receiver);
 		if (result !== undefined) {
@@ -129,27 +139,25 @@ const handlers = {
 		throw new Error(errorMessage);
 	},
 	set(_: object, prop: string, value: unknown, receiver: object) {
-		const result = createProperty(prop, value, receiver);
+		const result = createProperty(prop, value, receiver, options);
 		return result;
 	},
 	setPrototypeOf() {
-		throw new Error('Setting prototype is not allowed!');
+			throw new Error('Setting prototype is not allowed!');
 	},
 	// defineProperty(target: object, key: string, descriptor: object) {
 	defineProperty() {
-		throw new Error('Defining new Properties is not allowed!');
+			throw new Error('Defining new Properties is not allowed!');
 		// Reflect.defineProperty(target, key, descriptor);
 	},
 	deleteProperty() {
-		throw new Error('Properties Deletion is not allowed!');
+			throw new Error('Properties Deletion is not allowed!');
 	},
 	// getPrototypeOf() {
 	// 	debugger;
 	// 	throw new Error('Getting prototype is not allowed');
 	// },
-};
-
-Object.freeze(handlers);
+});
 
 // user have to precisely define all props
 export const baseTarget = (_proto?: object) => {
@@ -159,7 +167,7 @@ export const baseTarget = (_proto?: object) => {
 };
 
 export const SymbolTypeomaticaProxyReference = Symbol('TypeØmaticaProxyReference');
-const getTypeomaticaProxyReference = (_target: object) => {
+const getTypeomaticaProxyReference = (_target: object, options?: TypeomaticaOptions) => {
 	const target = Object.create(_target);
 	const id = `TypeØmaticaProxyReference-${Math.random()}`;
 	Object.defineProperty(target, SymbolTypeomaticaProxyReference, {
@@ -167,12 +175,13 @@ const getTypeomaticaProxyReference = (_target: object) => {
 			return id;
 		}
 	});
+	const handlers = createHandlers(options);
 	const proxy = new Proxy(target, handlers);
 	return proxy;
 };
 
 
-export const BaseConstructorPrototype = function <T extends object, S extends T>(this: S extends T ? S : {}, _target?: T ): T {
+export const BaseConstructorPrototype = function <T extends object, S extends T>(this: S extends T ? S : {}, _target?: T, options?: TypeomaticaOptions ): T {
 	if (!new.target) {
 
 		const self: {
@@ -180,7 +189,7 @@ export const BaseConstructorPrototype = function <T extends object, S extends T>
 				constructor: typeof BaseConstructorPrototype
 			}
 			//@ts-ignore
-		} = BaseConstructorPrototype.bind(this, _target);
+		} = BaseConstructorPrototype.bind(this, _target, options);
 
 		self.prototype = {
 			constructor: BaseConstructorPrototype
@@ -199,7 +208,7 @@ export const BaseConstructorPrototype = function <T extends object, S extends T>
 
 	const target = baseTarget(_target) as object;
 
-	const InstancePrototype = getTypeomaticaProxyReference(target);
+	const InstancePrototype = getTypeomaticaProxyReference(target, options);
 
 	let proto;
 	let protoPointer = this as object;
@@ -237,8 +246,8 @@ export const BaseConstructorPrototype = function <T extends object, S extends T>
 	return this;
 
 } as {
-	new<T extends object | {}>(_target?: T): T
-	<T extends object | {}, S extends T>(_target?: S extends infer S ? S : {}): S
+	new<T extends object | {}>(_target?: T, options?: TypeomaticaOptions): T
+	<T extends object | {}, S extends T>(_target?: S extends infer S ? S : {}, options?: TypeomaticaOptions): S
 };
 
 Object.defineProperty(module, 'exports', {
@@ -249,14 +258,14 @@ Object.defineProperty(module, 'exports', {
 });
 
 export class BaseClass {
-	constructor(_target?: object) {
+	constructor(_target?: object, options?: TypeomaticaOptions) {
 		// @ts-ignore
 		if (this[SymbolTypeomaticaProxyReference]) {
 			return this;
 		}
 
 		const target = baseTarget(_target) as object;
-		const proxy = getTypeomaticaProxyReference(target);
+		const proxy = getTypeomaticaProxyReference(target, options);
 		let proto: object | null = this;
 		let protoPointer: object | null;
 		let found: boolean = false;
@@ -280,7 +289,7 @@ export class BaseClass {
 }
 
 
-const strict = function (_target?: object) {
+const strict = function (_target?: object, options?: TypeomaticaOptions) {
 	const decorator = function<T>(cstr: T): T {
 
 		// @ts-ignore
@@ -289,7 +298,7 @@ const strict = function (_target?: object) {
 		}
 
 		const target = baseTarget(_target);
-		const proxy = getTypeomaticaProxyReference(target);
+		const proxy = getTypeomaticaProxyReference(target, options);
 		const _replacer = Object.create(proxy);
 
 		// @ts-ignore
