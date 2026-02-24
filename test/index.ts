@@ -73,7 +73,7 @@ class Base extends BasePrototype({
 	someMethod() {
 		return this.numberValue.valueOf();
 	},
-}) implements IBase {
+}, { strictAccessCheck: true }) implements IBase {
 	numberValue = 123;
 	stringValue: string;
 	booleanValue: boolean;
@@ -115,7 +115,7 @@ class SimpleBase extends BaseClass {
 	// ES2022
 	propString: string;
 	constructor() {
-		super();
+		super(undefined, { strictAccessCheck: true });
 		this.propString = '123';
 	}
 }
@@ -144,7 +144,7 @@ class TripleExtend extends SecondaryExtend { }
 const tiripleExtendInstance = addTag(new TripleExtend);
 
 // eslint-disable-next-line new-cap
-class NetworkedExtention extends BasePrototype(tiripleExtendInstance) { }
+class NetworkedExtention extends BasePrototype(tiripleExtendInstance, { strictAccessCheck: true }) { }
 
 const networkedInstance = addTag(new NetworkedExtention);
 
@@ -227,6 +227,9 @@ const myFieldReSet = new MyFieldConstructorReSet('initial value for set check');
 
 class MadeFieldClass extends BaseClass {
 	myField = myField as unknown | string;
+	constructor() {
+		super(undefined, { strictAccessCheck: true });
+	}
 	get [SymbolInitialValue]() {
 		const self = this;
 		return (fieldName: 'myField') => {
@@ -239,13 +242,28 @@ class MadeFieldClass extends BaseClass {
 		};
 	}
 }
-class SecondMadeFieldClass extends BaseClass { myField = myField as unknown | string; }
+class SecondMadeFieldClass extends BaseClass {
+	myField = myField as unknown | string;
+	constructor() {
+		super(undefined, { strictAccessCheck: true });
+	}
+}
 const madeFieldInstance = addTag(new MadeFieldClass);
 const secondMadeFieldInstance = addTag(new MadeFieldClass);
 const thirdMadeFieldInstance = addTag(new SecondMadeFieldClass);
 
-class MadeReGet extends BaseClass { myField = myFieldReGet as unknown | string; }
-class MadeReSet extends BaseClass { myField = myFieldReSet as unknown | string; }
+class MadeReGet extends BaseClass {
+	myField = myFieldReGet as unknown | string;
+	constructor() {
+		super(undefined, { strictAccessCheck: true });
+	}
+}
+class MadeReSet extends BaseClass {
+	myField = myFieldReSet as unknown | string;
+	constructor() {
+		super(undefined, { strictAccessCheck: true });
+	}
+}
 const madeReGet = addTag(new MadeReGet);
 const madeReSet = addTag(new MadeReSet);
 
@@ -420,6 +438,9 @@ describe('props tests', () => {
 			const wrongField = new WrongFieldConstructor(123);
 			class WithWrongField extends BaseClass {
 				erroredField = wrongField;
+				constructor() {
+					super(undefined, { strictAccessCheck: true });
+				}
 			}
 			new WithWrongField;
 
