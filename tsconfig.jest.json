@@ -1,34 +1,30 @@
 {
 	"compilerOptions": {
 		"module": "commonjs",
-		"target": "es2023",
+		"target": "esnext",
 		"strict": true,
 		"alwaysStrict": true,
-		"strictFunctionTypes": true,
+
+		"declaration": false,
 		"diagnostics": true,
-		"noImplicitThis": true,
+
 		"extendedDiagnostics": true,
-		"noImplicitReturns": true,
+		"forceConsistentCasingInFileNames": true,
 		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"noImplicitThis": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"declaration": true,
-		"inlineSourceMap": true,
-		"traceResolution": false,
 		"removeComments": true,
-		"experimentalDecorators": true,
-		"forceConsistentCasingInFileNames": true,
-		"types": [
-			"jest",
-			"node"
-		]
+		"strictFunctionTypes": true,
+		"traceResolution": false,
+		"types": [ "jest", "node" ]
 	},
 	"include": [
 		"./test/**/*.ts"
 	],
 	"exclude": [
 		"./lib/**/*",
-		"./coverage/**/*",
-		"./node_modules/**/*",
+		"./coverage/**/*"
 	]
 }
