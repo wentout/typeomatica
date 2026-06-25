@@ -77,7 +77,7 @@ npm install typeomatica
 ### How It Works
 
 TypeØmatica wraps objects with JavaScript Proxies that intercept:
-- `get` - Property reads
+- `get` - Property reads (undefined properties return `undefined`)
 - `set` - Property writes (with type validation)
 - `setPrototypeOf` - Blocks prototype changes
 - `defineProperty` - Blocks property redefinition
@@ -87,8 +87,9 @@ TypeØmatica wraps objects with JavaScript Proxies that intercept:
 
 | Category | Types | Behavior |
 |----------|-------|----------|
-| `primitives` | string, number, boolean, bigint, symbol, undefined | Type-locked accessors |
-| `nullish` | null | Only null allowed |
+| `primitives` | string, number, boolean | Type-locked accessors |
+| `special` | bigint, symbol, undefined | Same `typeof` required |
+| `nullish` | null | Any assignment throws after initialization |
 | `objects` | object, arrays, dates | Same constructor type required |
 | `functions` | methods | Restricted on data types |
 
@@ -111,12 +112,13 @@ class MyClass extends BaseClass {
 }
 ```
 
-### BasePrototype
+### BaseConstructorPrototype (default export)
 
-Functional equivalent of `BaseClass`.
+Functional equivalent of `BaseClass`. The default export of the package is `BaseConstructorPrototype`, which can be called without `new` to produce a base constructor.
 
 ```typescript
-import { BasePrototype } from 'typeomatica';
+import BasePrototype from 'typeomatica';
+// or: import { BaseConstructorPrototype } from 'typeomatica';
 
 const Base = BasePrototype({ initialProp: 123 });
 class MyClass extends Base { }
@@ -129,15 +131,223 @@ Apply strict typing without extending BaseClass.
 ```typescript
 import { Strict } from 'typeomatica';
 
-@Strict({ deep: true })
+@Strict()
 class MyClass {
   field: number = 0;
 }
 ```
 
 **Decorator Arguments:**
-- First argument: Base prototype or options object
-- Second argument: Options object
+- First argument: optional target object used as the prototype base
+- Second argument: optional options object
+
+### FieldConstructor
+
+Build custom property descriptors with controlled getters and setters. When a `FieldConstructor` instance is assigned to a BaseClass/BasePrototype property, its `get` and `set` methods are used directly as the property descriptor.
+
+```typescript
+import BasePrototype, { BaseClass, SymbolInitialValue } from 'typeomatica';
+const { FieldConstructor } = BasePrototype;
+
+// Default FieldConstructor: read-only field
+const createdAt = new FieldConstructor(new Date());
+
+class Record extends BaseClass {
+  createdAt = createdAt as unknown | Date;
+}
+
+const record = new Record();
+console.log(record.createdAt);           // ✓ Works
+// @ts-ignore
+record.createdAt = new Date();           // ✗ TypeError: Re-Assirnment is Forbidden
+```
+
+**Custom read/write field:**
+
+```typescript
+class MutableField extends FieldConstructor {
+  _value: string;
+  constructor(value: string) {
+    super(value);
+    this._value = value;
+    Reflect.defineProperty(this, 'enumerable', { value: true });
+    const self = this;
+    Reflect.defineProperty(this, 'get', {
+      get() {
+        return function () { return self._value; };
+      },
+      enumerable: true
+    });
+    Reflect.defineProperty(this, 'set', {
+      get() {
+        return function (value: string) { self._value = value; };
+      },
+      enumerable: true
+    });
+  }
+}
+
+const displayName = new MutableField('Guest');
+
+class User extends BaseClass {
+  displayName = displayName as unknown | string;
+}
+
+const user = new User();
+console.log(user.displayName);  // 'Guest'
+user.displayName = 'Alice';     // ✓ Works
+console.log(user.displayName);  // 'Alice'
+```
+
+**Function-constructor getter:**
+
+If you prefer function constructors over classes, subclass `FieldConstructor` through the prototype chain:
+
+```typescript
+function TimestampField(this: any, value: Date) {
+  return Reflect.construct(FieldConstructor, [value], TimestampField);
+}
+TimestampField.prototype = Object.create(FieldConstructor.prototype);
+Reflect.defineProperty(TimestampField.prototype, 'constructor', {
+  value: TimestampField,
+  writable: true,
+  configurable: true
+});
+
+Reflect.defineProperty(TimestampField.prototype, 'get', {
+  get() {
+    const self = this as FieldConstructor;
+    return function () {
+      return self[SymbolInitialValue];
+    };
+  },
+  enumerable: true
+});
+
+const created = new (TimestampField as any)(new Date());
+
+class Event extends BaseClass {
+  created = created as unknown | Date;
+}
+
+const event = new Event();
+console.log(event.created);  // Date instance
+```
+
+**Buffer field with `toJSON` support:**
+
+Wrap a `Buffer` so it serializes cleanly with `JSON.stringify`:
+
+```typescript
+class BufferField extends FieldConstructor {
+  buffer: Buffer;
+  constructor(value: Buffer) {
+    super(value);
+    this.buffer = value;
+    Reflect.defineProperty(this, 'enumerable', { value: true });
+    const self = this;
+    Reflect.defineProperty(this, 'get', {
+      get() {
+        return function () {
+          return Object.create(self.buffer, {
+            toJSON: {
+              value: () => self.buffer.toJSON()
+            },
+            valueOf: {
+              value: () => self.buffer
+            }
+          });
+        };
+      },
+      enumerable: true
+    });
+  }
+}
+
+const payload = new BufferField(Buffer.from('hello'));
+
+class Message extends BaseClass {
+  payload = payload as unknown | Buffer;
+}
+
+const message = new Message();
+console.log(JSON.stringify(message.payload)); // {"type":"Buffer","data":[104,101,108,108,111]}
+```
+
+**Typed unsigned integer fields:**
+
+Create `UInt8`, `UInt16`, and `UInt32` fields that clamp values, validate types, and expose `Symbol.toPrimitive` for arithmetic:
+
+```typescript
+function createUIntField(bits: 8 | 16 | 32) {
+  const max = 2 ** bits - 1;
+
+  return class UIntField extends FieldConstructor {
+    numericValue: number;
+    constructor(value: number) {
+      super(value);
+      const initial = parseInt(String(value), 10);
+      if (isNaN(initial)) {
+        throw new TypeError('Type Mismatch');
+      }
+      this.numericValue = Math.max(0, Math.min(max, initial));
+      Reflect.defineProperty(this, 'enumerable', { value: true });
+
+      const self = this;
+      Reflect.defineProperty(this, 'get', {
+        get() {
+          return function () {
+            return {
+              valueOf: () => self.numericValue,
+              [Symbol.toPrimitive]: (hint: string) => {
+                return hint === 'number' ? self.numericValue : String(self.numericValue);
+              }
+            };
+          };
+        },
+        enumerable: true
+      });
+
+      Reflect.defineProperty(this, 'set', {
+        get() {
+          return function (newValue: number) {
+            const num = parseInt(String(newValue), 10);
+            if (isNaN(num)) {
+              throw new TypeError('Type Mismatch');
+            }
+            self.numericValue = Math.max(0, Math.min(max, num));
+          };
+        },
+        enumerable: true
+      });
+    }
+  };
+}
+
+const UInt8Field = createUIntField(8);
+const UInt16Field = createUIntField(16);
+const UInt32Field = createUIntField(32);
+
+class Registers extends BaseClass {
+  flags = new UInt8Field(0) as unknown | number;
+  count = new UInt16Field(1000) as unknown | number;
+  timestamp = new UInt32Field(Date.now()) as unknown | number;
+}
+
+const registers = new Registers();
+registers.flags = 255;          // ✓ Works
+// @ts-ignore
+registers.flags = 256;          // ✗ clamps to 255 (or throw if you prefer)
+// @ts-ignore
+registers.flags = 'not a number'; // ✗ TypeError: Type Mismatch
+
+const doubled = registers.count.valueOf() * 2;
+```
+
+**Notes:**
+- Set `enumerable: true` on the instance if the property should appear in `Object.keys()`.
+- Reusing the same `FieldConstructor` instance across multiple class instances will share state.
+- Access the original constructor value through `FieldConstructor.SymbolInitialValue` or `instance[SymbolInitialValue]`.
 
 ### Options Interface
 
@@ -149,7 +359,6 @@ interface TypeomaticaOptions {
 
 **Options:**
 - `strictAccessCheck: true` - Enables strict receiver checking (throws `ACCESS_DENIED` error when property is accessed from wrong context)
-- `deep: true` - Enable recursive property checking (when using BasePrototype with initial values)
 
 ### Usage with Options
 
@@ -169,7 +378,7 @@ class User extends SecureBase {
 }
 
 // With @Strict decorator - strict access checking enabled
-@Strict(undefined, { strictAccessCheck: true })
+@Strict({ starterProp: true }, { strictAccessCheck: true })
 class Product {
   price: number = 0;
 }
@@ -178,10 +387,17 @@ class Product {
 ### Symbol Exports
 
 ```typescript
-import { 
+import BasePrototype, { 
+  BaseConstructorPrototype,         // Functional equivalent of BaseClass
+  BaseClass,                        // Primary strict-type base class
+  Strict,                           // Decorator for strict typing
   SymbolTypeomaticaProxyReference,  // Access proxy internals
-  SymbolInitialValue                 // Access original values
+  SymbolInitialValue,               // Access original values
+  baseTarget                        // Utility to create a null-prototype object
 } from 'typeomatica';
+
+// FieldConstructor is attached to the default export
+const { FieldConstructor } = BasePrototype;
 ```
 
 ---
@@ -212,7 +428,7 @@ user.age = '25';        // ✗ TypeError: Type Mismatch
 ```typescript
 import { Strict } from 'typeomatica';
 
-@Strict({ deep: true })
+@Strict()
 class Product {
   id: number = 0;
   title: string = '';
@@ -236,7 +452,7 @@ class UserData {
 }
 
 // Inject type checking into prototype chain
-Object.setPrototypeOf(UserData.prototype, new BaseClass({ deep: true }));
+Object.setPrototypeOf(UserData.prototype, new BaseClass());
 
 const user = new UserData();
 user.name = 'John';     // ✓ Works
@@ -276,9 +492,15 @@ class Nullable extends BaseClass {
 }
 
 const n = new Nullable();
-n.nullValue = null;              // ✓ Works
+n.nullValue = null;              // ✓ First assignment creates the property
+// @ts-ignore
+n.nullValue = null;              // ✗ TypeError: Type Mismatch (null cannot be reassigned)
 // @ts-ignore
 n.nullValue = undefined;         // ✗ TypeError: Type Mismatch
+
+n.undefinedValue = undefined;    // ✓ Works
+// @ts-ignore
+n.undefinedValue = 123;          // ✗ TypeError: Type Mismatch
 ```
 
 ### Objects
@@ -341,12 +563,11 @@ text.message.valueOf().length;         // 5
 |---------------|------------|-------------|
 | `Type Mismatch` | TypeError | Wrong type assigned to property |
 | `Value Access Denied` | ReferenceError | Property accessed from wrong context (only when `strictAccessCheck: true`) |
-| `Attempt to Access to Undefined Prop` | Error | Reading non-existent property |
 | `Functions are Restricted` | TypeError | Function assigned to data property |
 | `Re-Assirnment is Forbidden` | TypeError | Modifying read-only custom field |
-| `Setting prototype is not allowed` | Error | Calling `Object.setPrototypeOf()` |
-| `Defining new Properties is not allowed` | Error | Calling `Object.defineProperty()` |
-| `Properties Deletion is not allowed` | Error | Calling `delete` on property |
+| `Setting prototype is not allowed!` | Error | Calling `Object.setPrototypeOf()` |
+| `Defining new Properties is not allowed!` | Error | Calling `Object.defineProperty()` |
+| `Properties Deletion is not allowed!` | Error | Calling `delete` on property |
 
 ---
 

@@ -76,4 +76,4 @@ module.exports = defineConfig([{
         "prefer-rest-params": 0,
         "no-redeclare": 0,
     },
-}, globalIgnores([])]);
+}]);

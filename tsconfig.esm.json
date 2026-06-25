@@ -1,0 +1,14 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"module": "esnext",
+		"moduleResolution": "nodenext",
+		"target": "esnext",
+		"outDir": "lib/esm",
+		"declaration": true
+	},
+	"include": [
+		"./src/esm.ts"
+	],
+	"exclude": []
+}

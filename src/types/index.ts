@@ -1,10 +1,10 @@
 'use strict';
 
-export { functions } from './functions';
-export { nullish } from './nullish';
-export { objects } from './objects';
-export { primitives } from './primitives';
-export { special } from './special';
+export { functions } from './functions.js';
+export { nullish } from './nullish.js';
+export { objects } from './objects.js';
+export { primitives } from './primitives.js';
+export { special } from './special.js';
 
 const PRIMITIVE_TYPES = [
 	'string',

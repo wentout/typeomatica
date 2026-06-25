@@ -757,7 +757,54 @@ describe('deep extend works', () => {
 
 });
 
+describe('nullish value tests', () => {
+
+	const createNullishInstance = () => {
+		// eslint-disable-next-line new-cap
+		const NullishBase = BasePrototype({ nullishProp: null });
+		return addTag(new NullishBase);
+	};
+
+	test('null value is accessible', () => {
+		const nullishInstance = createNullishInstance();
+		expect(nullishInstance.nullishProp).toEqual(null);
+	});
+
+	test('null value cannot be reassigned', () => {
+		const nullishInstance = createNullishInstance();
+		// First assignment promotes the target property to a type-locked accessor
+		// @ts-ignore
+		nullishInstance.nullishProp = null;
+		expect(() => {
+			// @ts-ignore
+			nullishInstance.nullishProp = null;
+		}).toThrow(new TypeError('Type Mismatch'));
+	});
+
+	test('null value rejects non-null assignments', () => {
+		const nullishInstance = createNullishInstance();
+		// @ts-ignore
+		nullishInstance.nullishProp = null;
+		expect(() => {
+			// @ts-ignore
+			nullishInstance.nullishProp = 123;
+		}).toThrow(new TypeError('Type Mismatch'));
+
+		expect(() => {
+			// @ts-ignore
+			nullishInstance.nullishProp = undefined;
+		}).toThrow(new TypeError('Type Mismatch'));
+
+		expect(() => {
+			// @ts-ignore
+			nullishInstance.nullishProp = 'string';
+		}).toThrow(new TypeError('Type Mismatch'));
+	});
+
+});
+
 describe('coverage: ', () => {
+
 	test('builtin types works', () => {
 
 		const FnEx1 = function () { };

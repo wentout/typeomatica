@@ -1,8 +1,9 @@
 // oxlint-disable typescript/no-this-alias
-/* eslint-disable no-debugger */
+ 
 'use strict';
 
-import { ErrorsNames } from './errors';
+import { inspect } from 'util';
+import { ErrorsNames } from './errors.js';
 
 import {
 	functions,
@@ -11,9 +12,9 @@ import {
 	primitives,
 	special,
 	isPrimitive
-} from './types';
+} from './types/index.js';
 
-import { FieldConstructor } from './fields';
+import { FieldConstructor } from './fields.js';
 
 export interface TypeomaticaOptions {
 	strictAccessCheck?: boolean;
@@ -106,10 +107,9 @@ const props2skip = new Set([
 	'href'
 ]);
 // const props2skip = new Set([Symbol.toStringTag, Symbol.iterator]);
-const util = require('util');
-const hasNodeInspect = (util && util.inspect && util.inspect.custom);
+const hasNodeInspect = (inspect && inspect.custom);
 // oxlint-disable-next-line no-unused-expressions
-(hasNodeInspect && (props2skip.add(util.inspect.custom)));
+(hasNodeInspect && (props2skip.add(inspect.custom)));
 
 const createHandlers = (options?: TypeomaticaOptions) => ({
 	get(target: object, prop: string | symbol, receiver: object) {
@@ -244,15 +244,8 @@ export const BaseConstructorPrototype = function <T extends object, S extends T>
 
 } as {
 	new<T extends object | {}>(_target?: T, options?: TypeomaticaOptions): T
-	<T extends object | {}, S extends T>(_target?: S extends infer S ? S : {}, options?: TypeomaticaOptions): S
+	<T extends object | {}, S extends T>(_target?: S extends infer InferredS ? InferredS : {}, options?: TypeomaticaOptions): S
 };
-
-Object.defineProperty(module, 'exports', {
-	get() {
-		return BaseConstructorPrototype;
-	},
-	enumerable: true
-});
 
 export class BaseClass {
 	constructor(_target?: object, options?: TypeomaticaOptions) {
@@ -342,44 +335,61 @@ const strict = function (_target?: object, options?: TypeomaticaOptions) {
 
 };
 export const { SymbolInitialValue } = FieldConstructor;
+const FieldConstructorExport = FieldConstructor;
+export { FieldConstructorExport as FieldConstructor };
 export const Strict = strict;
 
-Object.defineProperty(module.exports, 'BaseClass', {
-	get() {
-		return BaseClass;
-	},
-	enumerable: true
-});
-Object.defineProperty(module.exports, 'FieldConstructor', {
-	get() {
-		return FieldConstructor;
-	},
-	enumerable: true
-});
-Object.defineProperty(module.exports, 'SymbolInitialValue', {
-	get() {
-		return SymbolInitialValue;
-	},
-	enumerable: true
-});
-Object.defineProperty(module.exports, 'SymbolTypeomaticaProxyReference', {
-	get() {
-		return SymbolTypeomaticaProxyReference;
-	},
-	enumerable: true
-});
-Object.defineProperty(module.exports, 'baseTarget', {
-	get() {
-		return baseTarget;
-	},
-	enumerable: true
-});
-Object.defineProperty(module.exports, 'Strict', {
-	get() {
-		return strict;
-	},
-	enumerable: true
-});
+/* istanbul ignore next */
+function setupCommonJS() {
+	if (typeof module === 'undefined' || typeof module.exports === 'undefined') {
+		return;
+	}
+	Object.defineProperty(module, 'exports', {
+		get() {
+			return BaseConstructorPrototype;
+		},
+		enumerable: true
+	});
+
+	Object.defineProperty(module.exports, 'BaseClass', {
+		get() {
+			return BaseClass;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'FieldConstructor', {
+		get() {
+			return FieldConstructor;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'SymbolInitialValue', {
+		get() {
+			return SymbolInitialValue;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'SymbolTypeomaticaProxyReference', {
+		get() {
+			return SymbolTypeomaticaProxyReference;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'baseTarget', {
+		get() {
+			return baseTarget;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'Strict', {
+		get() {
+			return strict;
+		},
+		enumerable: true
+	});
+}
+
+setupCommonJS();
 
 Object.freeze(BaseConstructorPrototype);
 Object.freeze(BaseConstructorPrototype.prototype);
