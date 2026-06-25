@@ -24,6 +24,7 @@
 		"traceResolution": false,
 		"types": [ "node" ],
 
+		"rootDir": "src",
 		"outDir": "lib"
 	},
 	"include": [

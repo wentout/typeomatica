@@ -3,7 +3,7 @@
 export const ErrorsNames = {
 	TYPE_MISMATCH: 'Type Mismatch',
 	ACCESS_DENIED: 'Value Access Denied',
-	MISSING_PROP: 'Attempt to Access to Undefined Prop',
 	RIP_FUNCTIONS: 'Functions are Restricted',
-	FORBIDDEN_RE: 'Re-Assirnment is Forbidden'
+	FORBIDDEN_RE: 'Re-Assirnment is Forbidden',
+	// MISSING_PROP: 'Attempt to Access to Undefined Prop',
 };

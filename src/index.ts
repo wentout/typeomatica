@@ -80,9 +80,7 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 	const resolver = createResolver(options);
 
 	const descriptor = (isObject && (value instanceof FieldConstructor)) ?
-		value
-		:
-		{
+		value : {
 			enumerable: true,
 			// @ts-ignore
 			...resolver[types](value, receiver),
@@ -120,7 +118,6 @@ const createHandlers = (options?: TypeomaticaOptions) => ({
 			return result;
 		}
 		if (prop === 'toJSON') {
-			// eslint-disable-next-line no-unused-vars
 			return function (this: typeof target) {
 				const entries = Object.entries(this);
 				return JSON.stringify(entries.reduce((obj, [key, value]) => {
@@ -135,23 +132,23 @@ const createHandlers = (options?: TypeomaticaOptions) => ({
 			const message = `${name} lacks definition of [ ${String(prop).valueOf()} ]`;
 			return message;
 		}
-		const errorMessage = `${ErrorsNames.MISSING_PROP}: [ ${String(prop).valueOf()} ] for ${name}`;
-		throw new Error(errorMessage);
+		// const errorMessage = `${ErrorsNames.MISSING_PROP}: [ ${String(prop).valueOf()} ] for ${name}`;
+		// throw new Error(errorMessage);
 	},
 	set(_: object, prop: string, value: unknown, receiver: object) {
 		const result = createProperty(prop, value, receiver, options);
 		return result;
 	},
 	setPrototypeOf() {
-			throw new Error('Setting prototype is not allowed!');
+		throw new Error('Setting prototype is not allowed!');
 	},
 	// defineProperty(target: object, key: string, descriptor: object) {
 	defineProperty() {
-			throw new Error('Defining new Properties is not allowed!');
+		throw new Error('Defining new Properties is not allowed!');
 		// Reflect.defineProperty(target, key, descriptor);
 	},
 	deleteProperty() {
-			throw new Error('Properties Deletion is not allowed!');
+		throw new Error('Properties Deletion is not allowed!');
 	},
 	// getPrototypeOf() {
 	// 	debugger;
