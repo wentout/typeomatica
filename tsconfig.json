@@ -19,11 +19,12 @@
 		"noImplicitThis": true,
 		"noUnusedLocals": true,
 		"noUnusedParameters": true,
-		"removeComments": true,
+		"removeComments": false,
 		"strictFunctionTypes": true,
 		"traceResolution": false,
 		"types": [ "node" ],
 
+		"rootDir": "src",
 		"outDir": "lib"
 	},
 	"include": [
@@ -31,6 +32,7 @@
 	],
 	"exclude": [
 		"./lib/**/*",
-		"./coverage/**/*"
+		"./coverage/**/*",
+		"./src/esm.ts"
 	]
 }

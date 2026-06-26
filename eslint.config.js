@@ -75,5 +75,10 @@ module.exports = defineConfig([{
     "rules": {
         "prefer-rest-params": 0,
         "no-redeclare": 0,
+        "no-multi-assign": 0,
     },
-}, globalIgnores([])]);
+}, {
+    ignores: [
+        "lib/**/*.d.ts",
+    ],
+}]);

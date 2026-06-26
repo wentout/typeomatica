@@ -1,26 +1,14 @@
 {
+	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"module": "commonjs",
-		"target": "esnext",
-		"strict": true,
-		"alwaysStrict": true,
-
+		"target": "es6",
 		"declaration": false,
-		"diagnostics": true,
-
-		"extendedDiagnostics": true,
-		"forceConsistentCasingInFileNames": true,
-		"noFallthroughCasesInSwitch": true,
-		"noImplicitReturns": true,
-		"noImplicitThis": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"removeComments": true,
-		"strictFunctionTypes": true,
-		"traceResolution": false,
+		"removeComments": false,
 		"types": [ "jest", "node" ]
 	},
 	"include": [
+		"./src/**/*.ts",
 		"./test/**/*.ts"
 	],
 	"exclude": [

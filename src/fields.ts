@@ -1,6 +1,6 @@
 'use strict';
 
-import { ErrorsNames } from './errors';
+import { ErrorsNames } from './errors.js';
 
 const SymbolInitialValue = Symbol('Initial Value');
 
