@@ -121,6 +121,35 @@ class SimpleBase extends BaseClass {
 }
 const simpleInstance = addTag(new SimpleBase);
 
+class InitialStateBase extends BaseClass {
+	constructor() {
+		super({ initialNumber: 42, initialString: 'hello' });
+		// @ts-ignore
+		this.initialNumber = this.initialNumber;
+		// @ts-ignore
+		this.initialString = this.initialString;
+	}
+}
+
+class DeepBaseA extends BaseClass {
+	aMethod() {
+		return 'A';
+	}
+}
+class DeepBaseB extends DeepBaseA {
+	bMethod() {
+		return 'B';
+	}
+}
+class DeepBaseC extends DeepBaseB {
+	cMethod() {
+		return 'C';
+	}
+}
+const deepBaseInstance = addTag(new DeepBaseC());
+
+const directBaseInstance = addTag(new BaseClass({ directProp: 123 }));
+
 interface IFCstr<S> {
 	(): void
 	new(): {
@@ -279,6 +308,46 @@ describe('props tests', () => {
 		const proto = rgp(decorated);
 		//@ts-expect-error;
 		expect(proto.someProp).toEqual(123);
+	});
+
+	test('BaseClass accepts initial state through super()', () => {
+		const instance = addTag(new InitialStateBase());
+		expect(instance.initialNumber.valueOf()).toEqual(42);
+		expect(instance.initialString.valueOf()).toEqual('hello');
+
+		instance.initialNumber = 100;
+		expect(instance.initialNumber.valueOf()).toEqual(100);
+
+		expect(() => {
+			// @ts-ignore
+			instance.initialNumber = 'wrong';
+		}).toThrow('Type Mismatch');
+	});
+
+	test('direct BaseClass instantiation works without polluting BaseClass.prototype', () => {
+		expect(directBaseInstance.directProp.valueOf()).toEqual(123);
+		// @ts-ignore
+		directBaseInstance.directProp = 456;
+		expect(directBaseInstance.directProp.valueOf()).toEqual(456);
+		expect(() => {
+			// @ts-ignore
+			directBaseInstance.directProp = 'wrong';
+		}).toThrow('Type Mismatch');
+	});
+
+	test('frozenPrototypes: false allows runtime prototype mutation', () => {
+		class UnfrozenBase extends BaseClass {
+			declare value: number;
+			constructor() {
+				super(undefined, { frozenPrototypes: false });
+				this.value = 1;
+			}
+		}
+		const instance = addTag(new UnfrozenBase());
+		expect(Object.isFrozen(UnfrozenBase.prototype)).toBe(false);
+		// @ts-ignore
+		UnfrozenBase.prototype.extra = 123;
+		expect(instance.extra.valueOf()).toEqual(123);
 	});
 
 	test('base instance has props', () => {
@@ -636,6 +705,29 @@ describe('prototype mutations tests', () => {
 		}).toThrow(new ReferenceError('Value Access Denied'));
 	});
 
+	test('class prototype cannot be reassigned', () => {
+		expect(() => {
+			Object.setPrototypeOf(Base.prototype, {});
+		}).toThrow(TypeError);
+	});
+
+	test('class prototype cannot grow new properties', () => {
+		expect(() => {
+			// @ts-ignore
+			Base.prototype.newProp = 1;
+		}).toThrow(TypeError);
+	});
+
+	test('proxy constructor access does not recurse', () => {
+		const proxy = Object.getPrototypeOf(DeepBaseA.prototype);
+		expect(() => {
+			// @ts-ignore
+			proxy.constructor;
+		}).not.toThrow();
+		// @ts-ignore
+		expect(proxy.constructor).toBeUndefined();
+	});
+
 });
 
 describe('methods tests', () => {
@@ -720,6 +812,25 @@ describe('deep extend works', () => {
 		expect(`${tiripleExtendInstance.stringValue}`).toEqual('123');
 		expect(tiripleExtendInstance.second).toBeInstanceOf(Number);
 
+	});
+
+	test('BaseClass deep hierarchy preserves intermediate prototype methods', () => {
+		expect(deepBaseInstance.aMethod()).toEqual('A');
+		expect(deepBaseInstance.bMethod()).toEqual('B');
+		expect(deepBaseInstance.cMethod()).toEqual('C');
+		expect(deepBaseInstance).toBeInstanceOf(DeepBaseA);
+		expect(deepBaseInstance).toBeInstanceOf(DeepBaseB);
+		expect(deepBaseInstance).toBeInstanceOf(DeepBaseC);
+	});
+
+	test('BaseClass freezes every prototype in the hierarchy', () => {
+		expect(Object.isFrozen(DeepBaseA.prototype)).toBe(true);
+		expect(Object.isFrozen(DeepBaseB.prototype)).toBe(true);
+		expect(Object.isFrozen(DeepBaseC.prototype)).toBe(true);
+		expect(() => {
+			// @ts-ignore
+			DeepBaseB.prototype.newProp = 1;
+		}).toThrow(TypeError);
 	});
 
 	test('network extention works', () => {
@@ -871,7 +982,6 @@ describe('coverage: ', () => {
 		// @ts-ignore
 		expect(cov5.hidden).toBeTruthy();
 
-		console.log(ogp(cov5));
 		debugger;
 
 		const proxyPointer = ogp(ogp(ogp(cov5)));
@@ -899,6 +1009,27 @@ describe('coverage: ', () => {
 		}
 		expect(error).toBeInstanceOf(Error);
 		expect(error.message).toBe('Properties Deletion is not allowed!');
+
+		class CovCLS6 extends BasePrototype({ value: 1 }, { frozenPrototypes: false }) {
+			declare value: number;
+		}
+		const cov6 = addTag(new CovCLS6);
+		expect(Object.isFrozen(CovCLS6.prototype)).toBe(false);
+		// @ts-ignore
+		CovCLS6.prototype.extra = 2;
+		// @ts-ignore
+		expect(cov6.extra.valueOf()).toEqual(2);
+
+		@Strict({ value: 1 }, { frozenPrototypes: false })
+		class CovCLS7 {
+			declare value: number;
+		}
+		const cov7 = addTag(new CovCLS7);
+		expect(Object.isFrozen(CovCLS7.prototype)).toBe(false);
+		// @ts-ignore
+		CovCLS7.prototype.extra = 3;
+		// @ts-ignore
+		expect(cov7.extra.valueOf()).toEqual(3);
 
 		// this tests we passed null
 		// as a target for proto

@@ -18,6 +18,7 @@ import { FieldConstructor } from './fields.js';
 
 export interface TypeomaticaOptions {
 	strictAccessCheck?: boolean;
+	frozenPrototypes?: boolean;
 }
 
 const createResolver = (options: TypeomaticaOptions = {}) => {
@@ -128,6 +129,9 @@ const createHandlers = (options?: TypeomaticaOptions) => ({
 				}, {}));
 			};
 		}
+		if (prop === 'constructor') {
+			return undefined;
+		}
 		const { name } = receiver.constructor;
 		if (props2skip.has(prop)) {
 			const message = `${name} lacks definition of [ ${String(prop).valueOf()} ]`;
@@ -205,8 +209,11 @@ export const BaseConstructorPrototype = function <T extends object, S extends T>
 	}
 
 	const target = baseTarget(_target) as object;
+	const { frozenPrototypes: freezeProtos = true } = options || {};
 
 	const InstancePrototype = getTypeomaticaProxyReference(target, options);
+
+	const classPrototype = Object.getPrototypeOf(this) as object;
 
 	let proto;
 	let protoPointer = this as object;
@@ -240,6 +247,9 @@ export const BaseConstructorPrototype = function <T extends object, S extends T>
 	}
 
 	Object.setPrototypeOf(proto, InstancePrototype);
+	if (freezeProtos) {
+		Object.freeze(classPrototype);
+	}
 	// @ts-ignore
 	return this;
 
@@ -250,39 +260,67 @@ export const BaseConstructorPrototype = function <T extends object, S extends T>
 };
 /* eslint-enable no-unused-vars */
 
+const freezeClassPrototypes = (instance: object, shouldFreeze: boolean) => {
+	if (!shouldFreeze) {
+		return;
+	}
+
+	const first = Object.getPrototypeOf(instance);
+	const firstIsProxy = first !== null && !!Reflect.getOwnPropertyDescriptor(first, SymbolTypeomaticaProxyReference);
+	if (firstIsProxy) {
+		Object.freeze(BaseClass.prototype);
+		return;
+	}
+
+	let p = first;
+	while (p !== null && p !== BaseClass.prototype && p !== Object.prototype) {
+		const next = Object.getPrototypeOf(p);
+		const nextIsProxy = next !== null && !!Reflect.getOwnPropertyDescriptor(next, SymbolTypeomaticaProxyReference);
+		Object.freeze(p);
+		if (nextIsProxy) {
+			break;
+		}
+		p = next;
+	}
+	Object.freeze(BaseClass.prototype);
+};
+
 export class BaseClass {
 	constructor(_target?: object, options?: TypeomaticaOptions) {
+		const { frozenPrototypes: freezeProtos = true } = options || {};
+
 		// @ts-ignore
 		if (this[SymbolTypeomaticaProxyReference]) {
+			freezeClassPrototypes(this, freezeProtos);
 			return this;
 		}
 
 		const target = baseTarget(_target) as object;
 		const proxy = getTypeomaticaProxyReference(target, options);
-		let proto: object | null = this;
-		let protoPointer: object | null;
-		let found: boolean = false;
-		do {
-			protoPointer = Object.getPrototypeOf(proto);
-			// if (protoPointer[SymbolTypeomaticaProxyReference]) {
-			// 	throw new Error('Double TypeØmatica extension is not allowed!');
-			// }
-			if (protoPointer === Object.prototype) {
-				found = true;
-				break;
-			}
-			/*
-			// it can be, that protoPointer === null
-			// though too hard to implement this test
-			*/
-			proto = protoPointer;
-		} while (!found);
-		Object.setPrototypeOf(proto, proxy);
+		const instanceProto = Object.getPrototypeOf(this);
+
+		if (instanceProto === BaseClass.prototype) {
+			Object.setPrototypeOf(this, proxy);
+			freezeClassPrototypes(this, freezeProtos);
+			return this;
+		}
+
+		let classProto = instanceProto;
+		let parentProto = Object.getPrototypeOf(classProto);
+		while (parentProto !== BaseClass.prototype && parentProto !== null) {
+			classProto = parentProto;
+			parentProto = Object.getPrototypeOf(classProto);
+		}
+
+		Object.setPrototypeOf(classProto, proxy);
+		freezeClassPrototypes(this, freezeProtos);
 	}
 }
 
 
 const strict = function (_target?: object, options?: TypeomaticaOptions) {
+	const { frozenPrototypes: freezeProtos = true } = options || {};
+
 	const decorator = function<T>(cstr: T): T {
 
 		// @ts-ignore
@@ -296,6 +334,10 @@ const strict = function (_target?: object, options?: TypeomaticaOptions) {
 
 		// @ts-ignore
 		Object.setPrototypeOf(cstr.prototype, _replacer);
+		if (freezeProtos) {
+			// @ts-ignore
+			Object.freeze(cstr.prototype);
+		}
 
 		return cstr;
 
