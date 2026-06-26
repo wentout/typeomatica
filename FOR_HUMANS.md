@@ -71,6 +71,18 @@ class User extends BaseClass {
 
 Or use `FieldConstructor` if you need custom getters/setters.
 
+## Three ways to attach it
+
+TypeØmatica gives you three APIs that all put a Proxy on your class prototype chain and then freeze that prototype. Pick whichever fits your existing code shape.
+
+| API | Looks like | When it wires | Initial state | Best for |
+|---|---|---|---|---|
+| `BaseClass` | `class X extends BaseClass { ... }` | First instance constructed | Per instance via `super({...})` | Modern class-based code |
+| `BasePrototype` | `class X extends BasePrototype({...}) { ... }` or `const X = BasePrototype({...})` | First instance constructed | Bound at class/factory creation | Function constructors or factory-returned constructors |
+| `@Strict()` | `@Strict({...}) class X { ... }` | When the class is decorated | Bound at decoration | Existing classes you do not want to `extend` |
+
+The behavior is the same: after a property is assigned, its type is locked, and attempts to mutate the prototype or add new properties to it are rejected.
+
 ## Five-minute example
 
 ```typescript

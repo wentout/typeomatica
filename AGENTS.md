@@ -32,6 +32,8 @@ npm run lint:src     # ESLint on src/
 npm run lint:lib     # ESLint on lib/
 ```
 
+Documentation-only changes (`.md` files) do not require running tests or linters.
+
 ## Module architecture
 
 - CJS consumers get `lib/index.js` via `main` / `exports.require`.
@@ -53,6 +55,66 @@ npm run lint:lib     # ESLint on lib/
 - Relative imports in `src/` must include the `.js` extension (`'./errors.js'`, `'./types/index.js'`). This is required for the ESM build.
 - Class properties that should be type-checked must be declared with `declare prop: Type;` and assigned inside the constructor. Initialized class fields (`prop: Type = value`) bypass the Proxy.
 - `src/esm.ts` must not introduce new runtime logic; it only re-exports.
+
+## Prototype wiring internals
+
+Understanding how the proxy is attached prevents accidental prototype pollution or coverage regressions.
+
+### `BaseClass`
+
+The constructor checks whether the instance already reaches a TypeØmatica proxy through its prototype chain. If it does, it returns immediately.
+
+Otherwise it walks up the prototype chain until it finds the class that directly extends `BaseClass` and installs the proxy there. This keeps intermediate classes intact. For `class C extends B extends A extends BaseClass` the resulting chain is:
+
+```
+instance → C.prototype → B.prototype → A.prototype → proxy → target
+```
+
+Every class prototype in that chain (`C.prototype`, `B.prototype`, and `A.prototype`) is frozen by default, so none of them can be reassigned or grow new properties at runtime. Pass `{ frozenPrototypes: false }` in `TypeomaticaOptions` to keep them mutable.
+
+For a direct subclass `class X extends BaseClass` the walk stops immediately:
+
+```
+instance → X.prototype → proxy → target
+```
+
+For a direct `new BaseClass(...)` call the instance itself is wired and `BaseClass.prototype` is frozen, but not mutated into a proxy.
+
+### `BaseConstructorPrototype`
+
+In constructor mode the function walks the instance's prototype chain until it reaches `BaseConstructorPrototype.prototype` (or a prototype whose `constructor` is `BaseConstructorPrototype`). The object just before that stopping point is treated as the class prototype:
+
+```
+instance → DerivedClass.prototype → BaseConstructorPrototype.prototype
+```
+
+It sets `DerivedClass.prototype.__proto__` to the proxy and freezes `DerivedClass.prototype` by default (configurable via `frozenPrototypes: false`):
+
+```
+instance → DerivedClass.prototype → proxy → target
+```
+
+For a direct `new BaseConstructorPrototype(...)` call there is no derived class, so the instance itself becomes the wired object and `BaseConstructorPrototype.prototype` is frozen as the class prototype.
+
+### `@Strict()` decorator
+
+At decoration time it reparents the class prototype to a plain object that itself inherits from the proxy, then freezes the class prototype by default (configurable via `frozenPrototypes: false`):
+
+```
+Class.prototype → plainReplacer → proxy → target
+```
+
+The extra plain replacer exists because the class already owns its methods and accessors on `Class.prototype`; the proxy only needs to handle missing properties.
+
+### Direct extension
+
+`class MyClass extends BaseConstructorPrototype {}` is valid, but after the first instance the chain becomes:
+
+```
+MyClass.prototype → proxy → target → null
+```
+
+Therefore `instanceof BaseConstructorPrototype` will be `false` after wiring. The factory form `class MyClass extends BasePrototype({...})` is the preferred API.
 
 ## What to discuss before changing
 

@@ -153,11 +153,93 @@ TypeØmatica wraps objects with JavaScript Proxies that intercept:
 
 ---
 
+## The Three Entry Points
+
+TypeØmatica exposes three APIs that all do the same underlying thing — attach a Proxy to a prototype chain so property writes are type-checked and the class prototype is frozen. They differ in how you create and attach that prototype.
+
+|  | `BaseClass` | `BasePrototype` / `BaseConstructorPrototype` | `@Strict()` |
+|---|---|---|---|
+| **How you use it** | `class X extends BaseClass { ... }` | `class X extends BasePrototype({...}) { ... }` or `const X = BasePrototype({...})` | `@Strict({...}) class X { ... }` |
+| **Wiring moment** | First time an instance is constructed | First time an instance is constructed | When the class is decorated (module load) |
+| **Initial state** | Can pass a *new* target per instance via `super({...})` | Target is bound at class/factory creation; `super(...)` args are ignored because the constructor is bound | Target/options are bound at decoration |
+| **Prototype chain shape** | `X.prototype → … → classDirectlyExtendingBase.prototype → proxy → target` | `X.prototype → proxy → target` (class usage) | `X.prototype → plain replacer → proxy → target` |
+| **Function-constructor support** | No | Yes — `BasePrototype` can return a constructor function | No |
+| **Default export?** | No, it is a named export/property | Yes, `require('typeomatica')` is `BaseConstructorPrototype` | No, exported as `Strict` |
+
+### 1. `BaseConstructorPrototype` (default export) — manual prototype manipulation
+
+`BaseConstructorPrototype` is the lowest-level API. It returns an instance that is designed to be assigned as the prototype of an existing constructor function using `Object.setPrototypeOf`.
+
+```typescript
+import BasePrototype from 'typeomatica';
+
+const MyConstructor = function (this: { value: number }) {
+	this.value = 0;
+};
+
+const baseProto = new BasePrototype({ value: 0 });
+Object.setPrototypeOf(MyConstructor.prototype, baseProto);
+
+const instance = new MyConstructor();
+instance.value = 42;     // ✓ Works
+// @ts-ignore
+instance.value = '42';   // ✗ TypeError: Type Mismatch
+```
+
+Use this when you already have a constructor function and need to inject type checking into its prototype chain manually, or when you want a factory that returns a constructor function.
+
+### 2. `BaseClass` — `extends`
+
+`BaseClass` is the same mechanism wrapped in a class. When you `extends BaseClass`, TypeØmatica internally sets the proxy prototype for you.
+
+```typescript
+import { BaseClass } from 'typeomatica';
+
+class MyClass extends BaseClass {
+	declare value: number;
+	constructor() {
+		super({ value: 0 });
+		this.value = this.value;
+	}
+}
+```
+
+`super()` accepts an optional initial-state object and `TypeomaticaOptions`. Because the proxy target is set up during `super()`, you usually re-assign the inherited values inside the constructor (as shown above) so they pass through the proxy and become type-locked. Unlike `BasePrototype`, `BaseClass` lets you pass a *new* initial-state object per instance.
+
+### 3. `@Strict()` — decorator
+
+`@Strict()` does the same prototype injection but as a class decorator. It accepts the same optional arguments as `BaseConstructorPrototype`:
+
+- First argument: initial-state object (`{ starterProp: value }`).
+- Second argument: `TypeomaticaOptions` (e.g., `{ strictAccessCheck: true }`).
+
+```typescript
+import { Strict } from 'typeomatica';
+
+@Strict({ value: 0 }, { strictAccessCheck: true })
+class MyClass {
+	declare value: number;
+	constructor() {
+		this.value = 0;
+	}
+}
+```
+
+Use `@Strict()` when you want a clean class decorator and need to pass initial state or options without changing the class `extends` clause.
+
+### Which one should I use?
+
+- Use **`BaseClass`** for modern `extends`-based classes, especially when you want per-instance initial state through `super({...})`.
+- Use **`BasePrototype(...)`** when you need a factory that returns a constructor, or when working with function constructors.
+- Use **`@Strict()`** when you want to Typeømatica-wrap an existing class without changing its `extends` clause.
+
+---
+
 ## API Reference
 
 ### BaseClass
 
-The primary class for strict-type objects.
+The primary class for strict-type objects. `super()` accepts an optional initial-state object and `TypeomaticaOptions`.
 
 ```typescript
 import { BaseClass } from 'typeomatica';
@@ -165,15 +247,17 @@ import { BaseClass } from 'typeomatica';
 class MyClass extends BaseClass {
   declare field: string;
   constructor() {
-    super();
-    this.field = 'value';
+    super({ field: 'value' });
+    this.field = this.field;
   }
 }
 ```
 
 ### BaseConstructorPrototype (default export)
 
-Functional equivalent of `BaseClass`. The default export of the package is `BaseConstructorPrototype`, which can be called without `new` to produce a base constructor.
+Functional equivalent of `BaseClass`. The default export of the package is `BaseConstructorPrototype`.
+
+**Form 1 — call without `new` to get a base constructor:**
 
 ```typescript
 import BasePrototype from 'typeomatica';
@@ -181,6 +265,21 @@ import BasePrototype from 'typeomatica';
 
 const Base = BasePrototype({ initialProp: 123 });
 class MyClass extends Base { }
+```
+
+**Form 2 — call with `new` to get a prototype object for `Object.setPrototypeOf`:**
+
+```typescript
+import BasePrototype from 'typeomatica';
+
+const MyConstructor = function (this: { initialProp: number }) {
+	this.initialProp = 0;
+};
+
+const baseProto = new BasePrototype({ initialProp: 123 });
+Object.setPrototypeOf(MyConstructor.prototype, baseProto);
+
+const instance = new MyConstructor();
 ```
 
 ### @Strict() Decorator
@@ -415,11 +514,13 @@ const doubled = registers.count.valueOf() * 2;
 ```typescript
 interface TypeomaticaOptions {
   strictAccessCheck?: boolean;  // default: false
+  frozenPrototypes?: boolean;   // default: true
 }
 ```
 
 **Options:**
 - `strictAccessCheck: true` - Enables strict receiver checking (throws `ACCESS_DENIED` error when property is accessed from wrong context)
+- `frozenPrototypes: false` - Keeps class prototypes mutable so methods/properties can be added at runtime (foot-gun allowed)
 
 ### Usage with Options
 
@@ -451,6 +552,16 @@ class Product {
     this.price = 0;
   }
 }
+
+// With BaseClass - allow runtime prototype mutation (not recommended)
+class ExtensibleBase extends BaseClass {
+  declare value: number;
+  constructor() {
+    super(undefined, { frozenPrototypes: false });
+    this.value = 0;
+  }
+}
+ExtensibleBase.prototype.helper = () => 'ok';
 ```
 
 ### Symbol Exports
