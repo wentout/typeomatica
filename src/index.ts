@@ -118,6 +118,7 @@ const createHandlers = (options?: TypeomaticaOptions) => ({
 			return result;
 		}
 		if (prop === 'toJSON') {
+			// eslint-disable-next-line no-unused-vars
 			return function (this: typeof target) {
 				const entries = Object.entries(this);
 				return JSON.stringify(entries.reduce((obj, [key, value]) => {
@@ -242,10 +243,12 @@ export const BaseConstructorPrototype = function <T extends object, S extends T>
 	// @ts-ignore
 	return this;
 
+/* eslint-disable no-unused-vars */
 } as {
 	new<T extends object | {}>(_target?: T, options?: TypeomaticaOptions): T
 	<T extends object | {}, S extends T>(_target?: S extends infer InferredS ? InferredS : {}, options?: TypeomaticaOptions): S
 };
+/* eslint-enable no-unused-vars */
 
 export class BaseClass {
 	constructor(_target?: object, options?: TypeomaticaOptions) {

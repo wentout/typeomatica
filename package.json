@@ -6,6 +6,9 @@
 		"node": ">=16"
 	},
 	"main": "lib/index.js",
+	"module": "lib/esm/esm.js",
+	"types": "lib/index.d.ts",
+	"sideEffects": false,
 	"exports": {
 		".": {
 			"import": {
@@ -25,8 +28,12 @@
 	},
 	"files": [
 		"README.md",
+		"FOR_HUMANS.md",
+		"AGENTS.md",
+		"EXAMPLES.md",
 		"LICENSE",
-		"lib"
+		"lib",
+		"examples"
 	],
 	"directories": {
 		"build": "lib/"
@@ -39,7 +46,7 @@
 		"test:cov": "npx jest --collectCoverage",
 		"test:esm": "npx vitest run test/esm",
 		"test:addition": "node --test --experimental-test-coverage  ./test/noJest.ts",
-		"examples": "node examples/01-function-constructor-getter.js && node examples/02-buffer-toJSON.js && node examples/03-shared-array-buffer.js && printf 'hello\\n' | node examples/05-stdin-stdout.js && node examples/04-uint-fields.js && node examples/06-shared-field-prototype-chain.js && node examples/07-shared-field-different-objects.js",
+		"examples": "node examples/01-function-constructor-getter.js && node examples/02-buffer-toJSON.js && node examples/03-shared-array-buffer.js && printf 'hello\\n' | node examples/05-stdin-stdout.js && node examples/04-uint-fields.js && node examples/06-shared-field-prototype-chain.js && node examples/07-shared-field-different-objects.js && node examples/08-async-field.js && node examples/09-pub-sub-field.js && node examples/10-iterator-field.js && node examples/11-time-to-live-field.js && node examples/12-loop-field.js && node examples/13-recursive-field.js && node examples/14-async-loop-field.js && node examples/15-async-recursive-field.js",
 		"debug:on-issues": "echo 'if debugger; command is not working try other Node.JS version'",
 		"debug": "node --inspect-brk --nolazy node_modules/.bin/jest --runInBand --detectOpenHandles",
 		"debug:jest": "node --nolazy --inspect-brk ./node_modules/jest/bin/jest.js --runInBand --colors --verbose",
@@ -51,13 +58,21 @@
 		"types",
 		"runtime",
 		"javascript",
-		"metaprogramming"
+		"typescript",
+		"metaprogramming",
+		"proxy",
+		"decorator",
+		"validation"
 	],
 	"author": "went.out@gmail.com",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/wentout/typeomatica.git"
+	},
+	"homepage": "https://github.com/wentout/typeomatica#readme",
+	"bugs": {
+		"url": "https://github.com/wentout/typeomatica/issues"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3.3.5",

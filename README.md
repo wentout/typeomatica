@@ -8,8 +8,6 @@
 
 [**$ npm install <u>typeomatica</u>**](https://www.npmjs.com/package/typeomatica)
 
-This package is a part of [mnemonica](https://www.npmjs.com/package/mnemonica) project.
-
 **Strict Runtime Type Checker for JavaScript Objects**
 
 TypeØmatica uses JavaScript Proxies to enforce type safety at runtime, exactly as TypeScript expects at compile time. Once a property is assigned a value, its type is locked and cannot be changed.
@@ -22,8 +20,13 @@ TypeØmatica uses JavaScript Proxies to enforce type safety at runtime, exactly 
 import { BaseClass } from 'typeomatica';
 
 class User extends BaseClass {
-  name: string = 'default';
-  age: number = 0;
+  declare name: string;
+  declare age: number;
+  constructor() {
+    super();
+    this.name = 'default';
+    this.age = 0;
+  }
 }
 
 const user = new User();
@@ -36,6 +39,51 @@ user.age = 25;
 user.age = '25';  // TypeError: Type Mismatch
 ```
 
+> **Important:** initialized class fields (`name = 'default'`) are stored as own properties and bypass the proxy. Use `declare name: string;` plus constructor assignment, or see `FieldConstructor` for custom descriptors.
+
+---
+
+## Module Support
+
+TypeØmatica ships both CommonJS and ESM builds:
+
+- **CommonJS:** `require('typeomatica')` resolves to `lib/index.js`.
+- **ESM:** `import { BaseClass, FieldConstructor } from 'typeomatica'` resolves to `lib/esm/esm.js`.
+- The dual build is produced by `tsconfig.json` (CJS) and `tsconfig.esm.json` (ESM).
+- `package.json` `exports` maps `".".require` to `lib/index.js` and `".".import` to `lib/esm/esm.js`.
+
+---
+
+## Development Commands
+
+```bash
+npm run build        # clean build of lib/ and lib/esm/
+npm run test:cov     # Jest CJS tests + 100% coverage
+npm run test:esm     # Vitest true-ESM import tests
+npm run examples     # run all examples/
+npm run lint:src     # ESLint on src/
+```
+
+---
+
+## Architecture
+
+- `src/index.ts` — shared core: `BaseClass`, `BaseConstructorPrototype` (default export), `@Strict` decorator, proxy handlers, and CJS `module.exports` setup.
+- `src/esm.ts` — ESM entry point that re-exports the default and named bindings from `src/index.ts`.
+- `src/fields.ts` — `FieldConstructor` class for custom property descriptors.
+- `src/types/*.ts` — type-category handlers (primitives, objects, functions, special, nullish).
+- `test/index.ts` — Jest CJS test suite (50 tests, 100% coverage).
+- `test/esm/` — Vitest tests that exercise the actual ESM `exports` map.
+- `examples/` — runnable integration examples.
+
+---
+
+## Coverage Policy
+
+- Jest CJS tests must keep **100%** coverage across statements, branches, functions, and lines.
+- Code paths that can only be reached through true ESM imports are covered by Vitest in `test/esm/`.
+- Istanbul ignore hints are preserved because `tsconfig.json` sets `removeComments: false`.
+
 ---
 
 ## Table of Contents
@@ -43,6 +91,8 @@ user.age = '25';  // TypeError: Type Mismatch
 - [What is TypeØmatica?](#what-is-typeomatica)
 - [Installation](#installation)
 - [Core Concepts](#core-concepts)
+- [Module Support](#module-support)
+- [Development](#development)
 - [API Reference](#api-reference)
 - [Usage Patterns](#usage-patterns)
 - [Type Examples](#type-examples)
@@ -95,6 +145,14 @@ TypeØmatica wraps objects with JavaScript Proxies that intercept:
 
 ---
 
+## Development
+
+- **For AI agents / contributors:** see [`AGENTS.md`](./AGENTS.md) for the file map, build pipeline, coverage rules, and conventions.
+- **For human readers:** see [`FOR_HUMANS.md`](./FOR_HUMANS.md) for the motivation, mental model, and friendly examples.
+- **Runnable patterns:** see [`EXAMPLES.md`](./EXAMPLES.md) for a catalog of all examples.
+
+---
+
 ## API Reference
 
 ### BaseClass
@@ -105,9 +163,10 @@ The primary class for strict-type objects.
 import { BaseClass } from 'typeomatica';
 
 class MyClass extends BaseClass {
-  field: string = 'value';
+  declare field: string;
   constructor() {
     super();
+    this.field = 'value';
   }
 }
 ```
@@ -133,7 +192,10 @@ import { Strict } from 'typeomatica';
 
 @Strict()
 class MyClass {
-  field: number = 0;
+  declare field: number;
+  constructor() {
+    this.field = 0;
+  }
 }
 ```
 
@@ -146,8 +208,7 @@ class MyClass {
 Build custom property descriptors with controlled getters and setters. When a `FieldConstructor` instance is assigned to a BaseClass/BasePrototype property, its `get` and `set` methods are used directly as the property descriptor.
 
 ```typescript
-import BasePrototype, { BaseClass, SymbolInitialValue } from 'typeomatica';
-const { FieldConstructor } = BasePrototype;
+import { BaseClass, FieldConstructor, SymbolInitialValue } from 'typeomatica';
 
 // Default FieldConstructor: read-only field
 const createdAt = new FieldConstructor(new Date());
@@ -365,22 +426,30 @@ interface TypeomaticaOptions {
 ```typescript
 // With BaseClass - strict access checking enabled
 class SecureData extends BaseClass {
-  secret: string = '';
+  declare secret: string;
   constructor() {
     super(undefined, { strictAccessCheck: true });
+    this.secret = '';
   }
 }
 
 // With BasePrototype - strict access checking enabled
 const SecureBase = BasePrototype({ data: '' }, { strictAccessCheck: true });
 class User extends SecureBase {
-  name: string = '';
+  declare name: string;
+  constructor() {
+    super();
+    this.name = '';
+  }
 }
 
 // With @Strict decorator - strict access checking enabled
 @Strict({ starterProp: true }, { strictAccessCheck: true })
 class Product {
-  price: number = 0;
+  declare price: number;
+  constructor() {
+    this.price = 0;
+  }
 }
 ```
 
@@ -396,8 +465,8 @@ import BasePrototype, {
   baseTarget                        // Utility to create a null-prototype object
 } from 'typeomatica';
 
-// FieldConstructor is attached to the default export
-const { FieldConstructor } = BasePrototype;
+// FieldConstructor is also available as a named export
+import { FieldConstructor } from 'typeomatica';
 ```
 
 ---
@@ -410,9 +479,15 @@ const { FieldConstructor } = BasePrototype;
 import { BaseClass } from 'typeomatica';
 
 class User extends BaseClass {
-  name: string = '';
-  age: number = 0;
-  active: boolean = true;
+  declare name: string;
+  declare age: number;
+  declare active: boolean;
+  constructor() {
+    super();
+    this.name = '';
+    this.age = 0;
+    this.active = true;
+  }
 }
 
 const user = new User();
@@ -430,9 +505,14 @@ import { Strict } from 'typeomatica';
 
 @Strict()
 class Product {
-  id: number = 0;
-  title: string = '';
-  price: number = 0;
+  declare id: number;
+  declare title: string;
+  declare price: number;
+  constructor() {
+    this.id = 0;
+    this.title = '';
+    this.price = 0;
+  }
 }
 
 const product = new Product();
@@ -447,8 +527,12 @@ product.price = '$29.99';   // ✗ TypeError: Type Mismatch
 import { BaseClass } from 'typeomatica';
 
 class UserData {
-  name: string = 'default';
-  age: number = 0;
+  declare name: string;
+  declare age: number;
+  constructor() {
+    this.name = 'default';
+    this.age = 0;
+  }
 }
 
 // Inject type checking into prototype chain
@@ -470,10 +554,17 @@ user.name = 123;        // ✗ TypeError: Type Mismatch
 import { BaseClass } from 'typeomatica';
 
 class Primitives extends BaseClass {
-  str: string = 'hello';
-  num: number = 42;
-  bool: boolean = true;
-  bigint: bigint = BigInt(100);
+  declare str: string;
+  declare num: number;
+  declare bool: boolean;
+  declare bigint: bigint;
+  constructor() {
+    super();
+    this.str = 'hello';
+    this.num = 42;
+    this.bool = true;
+    this.bigint = BigInt(100);
+  }
 }
 
 const p = new Primitives();
@@ -487,8 +578,13 @@ p.str = 123;              // ✗ TypeError: Type Mismatch
 
 ```typescript
 class Nullable extends BaseClass {
-  nullValue: null = null;
-  undefinedValue: undefined = undefined;
+  declare nullValue: null;
+  declare undefinedValue: undefined;
+  constructor() {
+    super();
+    this.nullValue = null;
+    this.undefinedValue = undefined;
+  }
 }
 
 const n = new Nullable();
@@ -507,8 +603,13 @@ n.undefinedValue = 123;          // ✗ TypeError: Type Mismatch
 
 ```typescript
 class WithObject extends BaseClass {
-  data: object = {};
-  list: number[] = [];
+  declare data: object;
+  declare list: number[];
+  constructor() {
+    super();
+    this.data = {};
+    this.list = [];
+  }
 }
 
 const w = new WithObject();
@@ -530,7 +631,11 @@ TypeØmatica wraps primitives to enforce type safety. Use `valueOf()` for operat
 
 ```typescript
 class Calc extends BaseClass {
-  count: number = 10;
+  declare count: number;
+  constructor() {
+    super();
+    this.count = 10;
+  }
 }
 
 const calc = new Calc();
@@ -547,7 +652,11 @@ const sum = 3 + +calc.count;               // 13
 
 ```typescript
 class Text extends BaseClass {
-  message: string = 'hello';
+  declare message: string;
+  constructor() {
+    super();
+    this.message = 'hello';
+  }
 }
 
 const text = new Text();
@@ -582,8 +691,13 @@ import { BaseClass, Strict } from 'typeomatica';
 @decorate()
 @Strict()
 class Entity extends BaseClass {
-  id: string = '';
-  createdAt: Date = new Date();
+  declare id: string;
+  declare createdAt: Date;
+  constructor() {
+    super();
+    this.id = '';
+    this.createdAt = new Date();
+  }
 }
 
 // Works with mnemonica's inheritance system
