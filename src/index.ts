@@ -21,6 +21,31 @@ export interface TypeomaticaOptions {
 	frozenPrototypes?: boolean;
 }
 
+interface ConstructionRecord {
+	fields    : Set<string | symbol>;
+	options   : TypeomaticaOptions | undefined;
+	finalized : boolean;
+}
+
+// Fields that passed through the define machinery, per instance.
+// The postConstruction comparator (Thunderstruck design) diffs the
+// instance's own descriptors against this Set to find fields added
+// hiddenly — class fields and other define-semantics writes.
+const constructionRecords = new WeakMap<object, ConstructionRecord>();
+
+const ensureRecord = (instance: object): ConstructionRecord => {
+	let record = constructionRecords.get(instance);
+	if (!record) {
+		record = {
+			fields    : new Set(),
+			options   : undefined,
+			finalized : false
+		};
+		constructionRecords.set(instance, record);
+	}
+	return record;
+};
+
 const createResolver = (options: TypeomaticaOptions = {}) => {
 	const { strictAccessCheck = false } = options;
 	
@@ -58,7 +83,7 @@ const createResolver = (options: TypeomaticaOptions = {}) => {
 	}, {});
 };
 
-const createProperty = (propName: string, initialValue: unknown, receiver: object, options?: TypeomaticaOptions) => {
+const createProperty = (propName: string | symbol, initialValue: unknown, receiver: object, options?: TypeomaticaOptions, configurable = false) => {
 
 	const value = initialValue;
 	const valueIsPrimitive = isPrimitive(initialValue);
@@ -84,6 +109,7 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 	const descriptor = (isObject && (value instanceof FieldConstructor)) ?
 		value : {
 			enumerable: true,
+			configurable,
 			// @ts-ignore
 			...resolver[types](value, receiver),
 		};
@@ -94,6 +120,11 @@ const createProperty = (propName: string, initialValue: unknown, receiver: objec
 	// }
 
 	const result = Reflect.defineProperty(receiver, propName, descriptor);
+
+	const record = ensureRecord(receiver);
+	record.fields.add(propName);
+	record.options = options;
+
 	return result;
 
 };
@@ -384,6 +415,88 @@ const FieldConstructorExport = FieldConstructor;
 export { FieldConstructorExport as FieldConstructor };
 export const Strict = strict;
 
+/**
+ * Fields that certainly passed through the define machinery for this
+ * instance. Returns a copy of the internal Set — safe for the caller
+ * to mutate.
+ */
+export const getConstructedFields = (instance: object): Set<string | symbol> => {
+	const record = constructionRecords.get(instance);
+	const result = record ? new Set(record.fields) : new Set<string | symbol>();
+	return result;
+};
+
+const finaliseFields = (instance: object, names: (string | symbol)[]): void => {
+	const record = ensureRecord(instance);
+	names.forEach((name) => {
+		if (record.fields.has(name)) {
+			// already passed through the machinery
+			return;
+		}
+		const descriptor = Reflect.getOwnPropertyDescriptor(instance, name);
+		if (!descriptor || !('value' in descriptor)) {
+			// nothing hidden under that name, or not a data field
+			return;
+		}
+		delete (instance as Record<PropertyKey, unknown>)[name];
+		// finalized fields stay configurable: they are the ones `unwrap`
+		// is allowed to turn back into plain value properties
+		createProperty(name, descriptor.value, instance, record.options, true);
+	});
+};
+
+/**
+ * Auto finalization: every hiddenly-added own field of the instance
+ * (class fields and other define-semantics writes that bypassed the
+ * proxy) is deleted and re-established through the define machinery.
+ * Sets the finalized flag — `true` means auto mode ran.
+ */
+export const finalize = (instance: object): void => {
+	const record = ensureRecord(instance);
+	finaliseFields(instance, Reflect.ownKeys(instance));
+	record.finalized = true;
+};
+
+/**
+ * Partial finalization: re-establish only the listed fields.
+ * Does NOT set the finalized flag — that flag means auto mode ran,
+ * everything else is the user's choice.
+ */
+export const finalizeBy = (instance: object, fields: (string | symbol)[]): void => {
+	finaliseFields(instance, fields);
+};
+
+export const isFinalized = (instance: object): boolean => {
+	const record = constructionRecords.get(instance);
+	const result = record ? record.finalized : false;
+	return result;
+};
+
+/**
+ * Turn a guarded field back into a plain value property.
+ * Allowed only for fields re-established by finalize/finalizeBy —
+ * they stay configurable by design. Fields guarded since construction
+ * are non-configurable: that lock is the essential design of the lib.
+ * Primitives are read back via .valueOf(); objects are placed as-is.
+ */
+export const unwrap = (instance: object, field: string | symbol): void => {
+	const descriptor = Reflect.getOwnPropertyDescriptor(instance, field);
+	if (!descriptor || !descriptor.configurable || typeof descriptor.get !== 'function') {
+		throw new TypeError(ErrorsNames.FORBIDDEN_UNWRAP);
+	}
+	const current = (instance as Record<PropertyKey, unknown>)[field];
+	const currentValueOf = (current as { valueOf?: unknown })?.valueOf;
+	const unwrapped = typeof currentValueOf === 'function'
+		? (current as { valueOf: () => unknown }).valueOf()
+		: current;
+	Object.defineProperty(instance, field, {
+		value        : unwrapped,
+		writable     : true,
+		enumerable   : true,
+		configurable : true
+	});
+};
+
 /* istanbul ignore next */
 function setupCommonJS() {
 	if (typeof module === 'undefined' || typeof module.exports === 'undefined') {
@@ -429,6 +542,36 @@ function setupCommonJS() {
 	Object.defineProperty(module.exports, 'Strict', {
 		get() {
 			return strict;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'getConstructedFields', {
+		get() {
+			return getConstructedFields;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'finalize', {
+		get() {
+			return finalize;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'finalizeBy', {
+		get() {
+			return finalizeBy;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'isFinalized', {
+		get() {
+			return isFinalized;
+		},
+		enumerable: true
+	});
+	Object.defineProperty(module.exports, 'unwrap', {
+		get() {
+			return unwrap;
 		},
 		enumerable: true
 	});

@@ -8,7 +8,7 @@ Runtime strict-type enforcement for JavaScript objects using Proxies and decorat
 
 | File | Purpose |
 |------|---------|
-| `src/index.ts` | Core: `BaseClass`, `BaseConstructorPrototype` (default export), `@Strict` decorator, proxy handlers, CJS export setup. |
+| `src/index.ts` | Core: `BaseClass`, `BaseConstructorPrototype` (default export), `@Strict` decorator, proxy handlers, construction-field tracking + `finalize` family + `unwrap`, CJS export setup. |
 | `src/esm.ts` | ESM entry point. Re-exports default + named bindings from `src/index.ts`. |
 | `src/fields.ts` | `FieldConstructor` class for custom property descriptors. |
 | `src/errors.ts` | Error message constants. |

@@ -8,6 +8,10 @@ import BasePrototype, {
 	SymbolInitialValue,
 	SymbolTypeomaticaProxyReference,
 	baseTarget,
+	finalize,
+	finalizeBy,
+	getConstructedFields,
+	isFinalized,
 	TypeomaticaOptions
 } from 'typeomatica';
 
@@ -23,6 +27,10 @@ describe('ESM imports', () => {
 		expect(typeof FieldConstructor).toBe('function');
 		expect(typeof Strict).toBe('function');
 		expect(typeof baseTarget).toBe('function');
+		expect(typeof finalize).toBe('function');
+		expect(typeof finalizeBy).toBe('function');
+		expect(typeof getConstructedFields).toBe('function');
+		expect(typeof isFinalized).toBe('function');
 		expect(typeof SymbolInitialValue).toBe('symbol');
 		expect(typeof SymbolTypeomaticaProxyReference).toBe('symbol');
 	});

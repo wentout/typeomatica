@@ -11,7 +11,7 @@ const ogp = Object.getPrototypeOf;
 // go as you want for being meaningfull
 // or meaningless
 const BasePrototype = require('..');
-const { BaseClass, FieldConstructor, SymbolInitialValue, Strict, SymbolTypeomaticaProxyReference, baseTarget } = BasePrototype;
+const { BaseClass, FieldConstructor, SymbolInitialValue, Strict, SymbolTypeomaticaProxyReference, baseTarget, getConstructedFields, finalize, finalizeBy, isFinalized, unwrap } = BasePrototype;
 
 const givenTags = new Map();
 let givenTagsInvocations = 0;
@@ -1077,4 +1077,165 @@ describe(`check duplications, skipped ${skip}`, () => {
 			});
 		}
 	}
+});
+
+
+describe('construction fields tracking + finalize (Thunderstruck step 1)', () => {
+
+	// NOTE: ts-jest compiles class fields to constructor assignments
+	// (useDefineForClassFields: false), so class-field syntax would NOT
+	// bypass the proxy here. A truly hidden field is established with
+	// define semantics — exactly what native ES2022 class fields do.
+
+	class TrackedProbe extends BaseClass {
+		declare shown: number;
+		declare name: string;
+		constructor() {
+			super();
+			this.shown = 1;
+			this.name = 'first';
+		}
+	}
+
+	const addHiddenField = (instance: object, value: unknown) => {
+		Object.defineProperty(instance, 'hidden', {
+			value,
+			writable: true,
+			enumerable: true,
+			configurable: true
+		});
+	};
+
+	test('fields assigned through the proxy are recorded per instance', () => {
+		const i = new TrackedProbe();
+		addHiddenField(i, 42);
+		const fields = getConstructedFields(i);
+		expect(fields.has('shown')).toBe(true);
+		expect(fields.has('name')).toBe(true);
+		expect(fields.has('hidden')).toBe(false);
+	});
+
+	test('getConstructedFields returns a copy; untracked objects give an empty set', () => {
+		const i = new TrackedProbe();
+		const fields = getConstructedFields(i);
+		fields.add('intruder');
+		expect(getConstructedFields(i).has('intruder')).toBe(false);
+		expect(getConstructedFields({}).size).toBe(0);
+	});
+
+	test('finalize re-establishes hidden fields through the machinery', () => {
+		const i = new TrackedProbe();
+		addHiddenField(i, 42);
+		expect(isFinalized(i)).toBe(false);
+
+		// hidden is a plain own data property: unguarded writes pass
+		// @ts-ignore
+		i.hidden = 'anything goes';
+
+		finalize(i);
+		expect(isFinalized(i)).toBe(true);
+
+		// the last value is preserved, now read through the primitives guard
+		// @ts-ignore
+		expect(i.hidden.valueOf()).toBe('anything goes');
+		expect(() => {
+			// @ts-ignore
+			i.hidden = 123;
+		}).toThrow('Type Mismatch');
+
+		// same-type writes still pass after finalize
+		// @ts-ignore
+		i.hidden = 'guarded now';
+		// @ts-ignore
+		expect(i.hidden.valueOf()).toBe('guarded now');
+	});
+
+	test('finalizeBy guards only the listed fields and leaves finalized false', () => {
+		const i = new TrackedProbe();
+		addHiddenField(i, 42);
+		finalizeBy(i, ['hidden']);
+		expect(isFinalized(i)).toBe(false);
+		// @ts-ignore
+		expect(i.hidden.valueOf()).toBe(42);
+		expect(() => {
+			// @ts-ignore
+			i.hidden = 'nope';
+		}).toThrow('Type Mismatch');
+	});
+
+	test('finalizeBy skips unknown names without touching anything', () => {
+		const i = new TrackedProbe();
+		addHiddenField(i, 42);
+		expect(() => finalizeBy(i, ['nonexistent'])).not.toThrow();
+		// still a plain own data property, unproxied read
+		// @ts-ignore
+		expect(i.hidden).toBe(42);
+	});
+
+	test('finalize leaves untracked own accessors as they are', () => {
+		const i = new TrackedProbe();
+		Object.defineProperty(i, 'manual', {
+			get() { return 'manual value'; },
+			configurable: true
+		});
+		finalize(i);
+		// @ts-ignore
+		expect(i.manual).toBe('manual value');
+		expect(isFinalized(i)).toBe(true);
+	});
+
+	test('isFinalized is false for objects typeomatica never saw', () => {
+		expect(isFinalized({})).toBe(false);
+	});
+
+	test('unwrap turns a finalized primitive field back into a plain value', () => {
+		const i = new TrackedProbe();
+		addHiddenField(i, 42);
+		finalize(i);
+		// @ts-ignore
+		expect(i.hidden.valueOf()).toBe(42);
+		unwrap(i, 'hidden');
+		// @ts-ignore
+		expect(i.hidden).toBe(42);
+		// @ts-ignore
+		i.hidden = 'free again';
+		// @ts-ignore
+		expect(i.hidden).toBe('free again');
+	});
+
+	test('unwrap places an object field as-is', () => {
+		const i = new TrackedProbe();
+		addHiddenField(i, { deep: true });
+		finalize(i);
+		// @ts-ignore
+		const before = i.hidden;
+		unwrap(i, 'hidden');
+		// @ts-ignore
+		expect(i.hidden).toBe(before);
+		// @ts-ignore
+		expect(i.hidden.deep).toBe(true);
+	});
+
+	test('unwrap places a nullish field as-is', () => {
+		const i = new TrackedProbe();
+		addHiddenField(i, null);
+		finalize(i);
+		unwrap(i, 'hidden');
+		// @ts-ignore
+		expect(i.hidden).toBe(null);
+	});
+
+	test('unwrap refuses fields guarded since construction', () => {
+		const i = new TrackedProbe();
+		finalize(i);
+		expect(() => unwrap(i, 'shown')).toThrow('Unwrap is allowed only for finalized fields');
+	});
+
+	test('unwrap refuses missing and never-guarded fields', () => {
+		const i = new TrackedProbe();
+		expect(() => unwrap(i, 'nonexistent')).toThrow('Unwrap is allowed only for finalized fields');
+		addHiddenField(i, 42);
+		expect(() => unwrap(i, 'hidden')).toThrow('Unwrap is allowed only for finalized fields');
+	});
+
 });

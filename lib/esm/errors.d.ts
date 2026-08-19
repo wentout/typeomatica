@@ -3,4 +3,5 @@ export declare const ErrorsNames: {
     ACCESS_DENIED: string;
     RIP_FUNCTIONS: string;
     FORBIDDEN_RE: string;
+    FORBIDDEN_UNWRAP: string;
 };
