@@ -39,7 +39,34 @@ user.age = 25;
 user.age = '25';  // TypeError: Type Mismatch
 ```
 
-> **Important:** initialized class fields (`name = 'default'`) are stored as own properties and bypass the proxy. Use `declare name: string;` plus constructor assignment, or see `FieldConstructor` for custom descriptors.
+> **Important:** initialized class fields (`name = 'default'`) are stored as own properties and bypass the proxy. Use `declare name: string;` plus constructor assignment, or see `FieldConstructor` for custom descriptors — or call `finalize(instance)` to re-establish hiddenly-added fields as guarded ones (see below).
+
+## Construction Tracking & Finalization
+
+TypeØmatica records every field that passes through its define machinery,
+per instance. Fields added with define semantics (class field initializers,
+`Object.defineProperty`) bypass the proxy — `finalize` re-establishes them
+as guarded fields after the fact:
+
+- `getConstructedFields(instance)` — `Set` of field names that certainly
+  passed through the machinery (a copy; mutating it affects nothing).
+- `finalize(instance)` — auto mode: every hiddenly-added own field is
+  deleted and re-established through the define machinery; sets the
+  finalized flag.
+- `finalizeBy(instance, fields)` — partial mode: same for a listed subset;
+  does **not** set the finalized flag.
+- `isFinalized(instance)` — `true` only if auto `finalize` ran; manual or
+  partial finalization leaves it `false`.
+- `unwrap(instance, field)` — turns a guarded field back into a plain value
+  property: boxed primitives are read back via `.valueOf()`, objects and
+  nullish values are placed as-is. Allowed **only** for fields re-established
+  by `finalize`/`finalizeBy` — those stay `configurable: true` by design.
+  Fields guarded since construction are non-configurable forever; that lock
+  is the essential design of the library, not an accident.
+
+Designed as the `postCreation`-hook companion for mnemonica chains: at each
+construction level, diff the instance's own descriptors against
+`getConstructedFields(instance)` to find what bypassed the proxy.
 
 ---
 
@@ -72,8 +99,8 @@ npm run lint:src     # ESLint on src/
 - `src/esm.ts` — ESM entry point that re-exports the default and named bindings from `src/index.ts`.
 - `src/fields.ts` — `FieldConstructor` class for custom property descriptors.
 - `src/types/*.ts` — type-category handlers (primitives, objects, functions, special, nullish).
-- `test/index.ts` — Jest CJS test suite (50 tests, 100% coverage).
-- `test/esm/` — Vitest tests that exercise the actual ESM `exports` map.
+- `test/index.ts` — Jest CJS test suite (70 tests, 100% coverage).
+- `test/esm/` — Vitest tests that exercise the actual ESM `exports` map, including the native class-fields (define semantics) suite.
 - `examples/` — runnable integration examples.
 
 ---
