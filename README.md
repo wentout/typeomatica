@@ -115,7 +115,7 @@ npm run lint:src     # ESLint on src/
 
 ## Table of Contents
 
-- [What is TypeØmatica?](#what-is-typeomatica)
+- [What is TypeØmatica?](#what-is-typeømatica)
 - [Installation](#installation)
 - [Core Concepts](#core-concepts)
 - [Module Support](#module-support)
@@ -852,7 +852,7 @@ user.email = 123;  // ✗ TypeError: Type Mismatch
 - `@Strict()` must come AFTER `@decorate()` (inner decorator)
 - Decorators apply bottom-to-top
 
-For complete integration documentation, see [mnemonica's TypeØmatica guide](https://github.com/wentout/mnemonica/blob/main/core/TypeØmatica.md).
+For complete integration documentation, see [mnemonica's TypeØmatica guide](https://github.com/wentout/mnemonica/blob/master/docs/typeomatica.md).
 
 ---
 

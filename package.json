@@ -1,6 +1,6 @@
 {
 	"name": "typeomatica",
-	"version": "0.3.61",
+	"version": "0.3.62",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
 		"node": ">=16"
@@ -42,6 +42,7 @@
 		"build": "rm -rf ./lib && npx tsc --target esnext --pretty && npx tsc --project tsconfig.esm.json && printf '{\"type\":\"module\"}\\n' > lib/esm/package.json",
 		"lint:lib": "npx eslint --fix ./lib",
 		"lint:src": "npx eslint --fix ./src",
+		"lint:md": "find . -name '*.md' -not -path '*/node_modules/*' | xargs markdown-link-check -q --config .markdown-link-check.json",
 		"test": "npx jest",
 		"test:cov": "npx jest --collectCoverage",
 		"test:esm": "npx vitest run test/esm",
@@ -87,6 +88,7 @@
 		"jest": "^30.4.2",
 		"json5": "^2.2.3",
 		"lint-staged": "^16.4.0",
+		"markdown-link-check": "^3.15.0",
 		"set-value": "^4.1.0",
 		"ts-jest": "^29.4.12",
 		"typescript": "^5.9.3",
