@@ -1,6 +1,6 @@
 {
 	"name": "typeomatica",
-	"version": "0.3.60",
+	"version": "0.3.61",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
 		"node": ">=16"
@@ -75,21 +75,21 @@
 		"url": "https://github.com/wentout/typeomatica/issues"
 	},
 	"devDependencies": {
-		"@eslint/eslintrc": "^3.3.5",
+		"@eslint/eslintrc": "^3.3.6",
 		"@eslint/js": "^9.39.2",
 		"@types/jest": "^30.0.0",
-		"@types/node": "^25.9.4",
-		"@typescript-eslint/eslint-plugin": "^8.62.0",
-		"@typescript-eslint/parser": "^8.62.0",
-		"eslint": "^9.39.4",
-		"globals": "^17.7.0",
+		"@types/node": "^25.9.5",
+		"@typescript-eslint/eslint-plugin": "^8.67.0",
+		"@typescript-eslint/parser": "^8.67.0",
+		"eslint": "^9.39.5",
+		"globals": "^17.11.0",
 		"husky": "^9.1.7",
 		"jest": "^30.4.2",
 		"json5": "^2.2.3",
 		"lint-staged": "^16.4.0",
 		"set-value": "^4.1.0",
-		"ts-jest": "^29.4.11",
+		"ts-jest": "^29.4.12",
 		"typescript": "^5.9.3",
-		"vitest": "^4.1.9"
+		"vitest": "^4.1.11"
 	}
 }
