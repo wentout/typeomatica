@@ -30,9 +30,11 @@ npm run test:esm     # Vitest true-ESM import tests
 npm run examples     # run every example in examples/
 npm run lint:src     # ESLint on src/
 npm run lint:lib     # ESLint on lib/
+npm run lint:md      # markdown-link-check on all .md files
 ```
 
-Documentation-only changes (`.md` files) do not require running tests or linters.
+Documentation-only changes (`.md` files) must pass `npm run lint:md`; tests and
+code linters are not required for them.
 
 ## Module architecture
 
