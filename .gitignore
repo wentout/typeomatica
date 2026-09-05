@@ -8,3 +8,7 @@ coverage
 .idea
 test/index.js
 .npmrc
+
+# internal agent memory — never published
+plans/
+reports/
