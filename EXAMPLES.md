@@ -24,7 +24,7 @@ node examples/01-function-constructor-getter.js
 | 06 | [`shared-field-prototype-chain.js`](./examples/06-shared-field-prototype-chain.js) | Shared field behavior across a prototype chain. |
 | 07 | [`shared-field-different-objects.js`](./examples/07-shared-field-different-objects.js) | Shared field state synchronized across different object instances. |
 
-## Planned examples
+## Advanced examples
 
 | # | File | Concept | Tier |
 |---|------|---------|------|
