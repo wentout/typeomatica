@@ -7,6 +7,7 @@ coverage
 .nyc_output
 .idea
 test/index.js
+test/noJest.js
 .npmrc
 
 # internal agent memory — never published
