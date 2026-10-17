@@ -16,7 +16,7 @@ Runtime strict-type enforcement for JavaScript objects using Proxies and decorat
 | `src/types/index.ts` | Aggregates and exports `isPrimitive`. |
 | `test/index.ts` | Jest CJS test suite. Must keep 100% coverage. |
 | `test/esm/imports.test.ts` | Vitest tests for true ESM imports. |
-| `test/noJest.ts` | Node native test file (currently requires a TS loader to run). |
+| `test/noJest.ts` | Node native test file against the built `lib/`. `npm run test:addition` compiles it with `tsc` (Node's type stripping cannot run the decorator), then runs `node --test`. |
 | `examples/` | Runnable integration examples. |
 | `lib/` | CJS build output. |
 | `lib/esm/` | ESM build output. |
