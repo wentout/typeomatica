@@ -3,7 +3,7 @@
 	"version": "0.3.65",
 	"description": "type logic against javascript metaprogramming",
 	"engines": {
-		"node": ">=16"
+		"node": ">=22 <27"
 	},
 	"main": "lib/index.js",
 	"module": "lib/esm/esm.js",
